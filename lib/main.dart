@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:order_processing_app/components/card_invoice.dart';
 import 'package:order_processing_app/utils/app_colors.dart';
+import 'package:order_processing_app/views/main/dashboard.dart';
 import 'package:order_processing_app/views/splash/splashscreen.dart';
 
 void main() {
@@ -17,7 +19,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         scaffoldBackgroundColor: AppColor.backgroundColor,
       ),
-      home: const Splashscreen(),
+      home: const UserDashboard(),
     );
   }
 }
