@@ -7,7 +7,7 @@ import 'package:order_processing_app/components/custom_button.dart';
 import 'package:order_processing_app/components/custom_text.dart';
 import 'package:order_processing_app/components/custom_textfield.dart';
 import 'package:order_processing_app/components/custom_title.dart';
-import 'package:order_processing_app/services/api_service.dart';
+import 'package:order_processing_app/services/auth_api_service.dart';
 import 'package:order_processing_app/utils/app_colors.dart';
 import 'package:order_processing_app/utils/app_components.dart';
 import 'package:order_processing_app/utils/util_functions.dart';
