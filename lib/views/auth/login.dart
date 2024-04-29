@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:logger/logger.dart';
 import 'package:order_processing_app/components/alert_dialog.dart';
-import 'package:order_processing_app/services/api_service.dart';
+import 'package:order_processing_app/services/auth_api_service.dart';
 import 'package:order_processing_app/views/auth/forgot_password.dart';
 import 'package:order_processing_app/components/custom_button.dart';
 import 'package:order_processing_app/components/custom_text.dart';

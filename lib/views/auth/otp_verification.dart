@@ -9,7 +9,7 @@ import 'package:order_processing_app/components/custom_title.dart';
 import 'package:order_processing_app/services/token_manager.dart';
 import 'package:order_processing_app/views/auth/login.dart';
 import 'package:order_processing_app/views/main/dashboard.dart';
-import 'package:order_processing_app/services/api_service.dart';
+import 'package:order_processing_app/services/auth_api_service.dart';
 import 'package:order_processing_app/utils/app_colors.dart';
 import 'package:order_processing_app/utils/app_components.dart';
 import 'package:order_processing_app/utils/util_functions.dart';
