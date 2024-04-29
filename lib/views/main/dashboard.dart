@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:logger/web.dart';
 import 'package:order_processing_app/components/custom_button.dart';
 import 'package:order_processing_app/services/token_manager.dart';
+import 'package:order_processing_app/utils/app_colors.dart';
 import 'package:order_processing_app/utils/app_components.dart';
+import 'package:order_processing_app/views/assignment/assignment_list.dart';
 import 'package:order_processing_app/views/auth/login.dart';
 import 'package:order_processing_app/views/main/drawer.dart';
 
@@ -35,7 +40,6 @@ class _UserDashboardState extends State<UserDashboard> {
     final double maxWidth = MediaQuery.of(context).size.width;
     final double maxHeight = MediaQuery.of(context).size.height;
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F1F1),
       key: _scaffoldKey,
       appBar: _buildAppBar(),
       drawer: const AppDrawer(),
@@ -62,9 +66,9 @@ class _UserDashboardState extends State<UserDashboard> {
     return AppBar(
       // backgroundColor: const Color(0xFFF1F1F1),
       leading: IconButton(
-        icon: const Icon(Icons.menu),
+        icon: const Icon(Icons.menu_rounded),
         onPressed: () {
-          _scaffoldKey.currentState?.openDrawer(); // Open the drawer
+          _scaffoldKey.currentState?.openDrawer();
         },
       ),
       title: Container(
@@ -73,7 +77,6 @@ class _UserDashboardState extends State<UserDashboard> {
           AppComponents.appLogo,
           width: 20, // Adjust width as needed
           height: 20, // Adjust height as needed
-          // You can also adjust other properties of SvgPicture.asset here
         ),
       ),
     );
@@ -87,7 +90,7 @@ class _UserDashboardState extends State<UserDashboard> {
         child: Column(
           children: [
             _buildListTile(),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
             containerRow1(
               image: AppComponents.dashReport,
               image1: AppComponents.dashReportData,
@@ -139,6 +142,22 @@ class _UserDashboardState extends State<UserDashboard> {
               },
             ),
             containerRow1(
+              image: AppComponents.dashAssignment,
+              image1: AppComponents.dashAssignmentData,
+              text: "Assignments",
+              text1: "",
+              text2: "",
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AssignmentList(),
+                  ),
+                );
+                print("Tapped Assignment");
+              },
+            ),
+            containerRow1(
               image: AppComponents.dashMap,
               image1: AppComponents.dashMapData,
               text: "Map",
@@ -161,8 +180,8 @@ class _UserDashboardState extends State<UserDashboard> {
         physics: const BouncingScrollPhysics(),
         child: Column(
           children: [
-            // _buildListTile(),
-            const SizedBox(height: 20),
+            _buildListTile(),
+            const SizedBox(height: 10),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -236,6 +255,29 @@ class _UserDashboardState extends State<UserDashboard> {
                     },
                   ),
                 ),
+                Expanded(
+                  child: containerRow1(
+                    image: AppComponents.dashAssignment,
+                    image1: AppComponents.dashAssignmentData,
+                    text: "Assignments",
+                    text1: "",
+                    text2: "",
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AssignmentList(),
+                        ),
+                      );
+                      print("Tapped Assignment");
+                    },
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Expanded(
                   child: containerRow1(
                     image: AppComponents.dashMap,
@@ -335,6 +377,24 @@ class _UserDashboardState extends State<UserDashboard> {
                 ),
                 Expanded(
                   child: containerRow1(
+                    image: AppComponents.dashAssignment,
+                    image1: AppComponents.dashAssignmentData,
+                    text: "Assignments",
+                    text1: "",
+                    text2: "",
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AssignmentList(),
+                        ),
+                      );
+                      print("Tapped Assignment");
+                    },
+                  ),
+                ),
+                Expanded(
+                  child: containerRow1(
                     image: AppComponents.dashMap,
                     image1: AppComponents.dashMapData,
                     text: "Map",
@@ -354,9 +414,9 @@ class _UserDashboardState extends State<UserDashboard> {
   }
 
   Widget _buildListTile() {
-    return const ListTile(
-      contentPadding: EdgeInsets.only(left: 10, right: 10),
-      title: Text(
+    return ListTile(
+      contentPadding: const EdgeInsets.only(left: 10, right: 10),
+      title: const Text(
         "Welcome Back John",
         style: TextStyle(
           fontWeight: FontWeight.w500,
@@ -366,15 +426,41 @@ class _UserDashboardState extends State<UserDashboard> {
         maxLines: 1,
       ),
       subtitle: Padding(
-        padding: EdgeInsets.only(top: 5),
-        child: Text(
-          "Lorem ipsum dolor sit amet, welcome back Johny",
-          style: TextStyle(
-            fontWeight: FontWeight.w400,
-            letterSpacing: 1,
-            fontFamily: "PublicSansRegular",
+        padding: const EdgeInsets.only(top: 5),
+        child: Container(
+          height: 50,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColor.placeholderTextColor),
           ),
-          maxLines: 1,
+          child: const Padding(
+            padding: EdgeInsets.all(12.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    "Daily Commission :",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 1,
+                      fontFamily: "PublicSansMedium",
+                    ),
+                    maxLines: 1,
+                  ),
+                ),
+                Text(
+                  "\$00.00",
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 1,
+                    fontFamily: "PublicSansMedium",
+                    color: AppColor.accentColor,
+                  ),
+                  maxLines: 1,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -413,11 +499,14 @@ class _UserDashboardState extends State<UserDashboard> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      Text(text,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                          )),
+                      Text(
+                        text,
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 20,
+                          color: Colors.white,
+                        ),
+                      ),
                       const Spacer(),
                       Row(
                         mainAxisSize: MainAxisSize.max,

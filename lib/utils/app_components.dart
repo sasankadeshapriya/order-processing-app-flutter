@@ -21,6 +21,8 @@ class AppComponents {
   static const dashClientData = '${imagePath}dashClientData.png';
   static const dashInventory = '${imagePath}dashInventory.png';
   static const dashInventoryData = '${imagePath}dashInventoryData.png';
+  static const dashAssignment = '${imagePath}dashAssignment.png';
+  static const dashAssignmentData = '${imagePath}dashAssignmentData.png';
 
   //_________________icons
   static const emailIcon = '${iconPath}email.svg';
