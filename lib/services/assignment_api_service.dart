@@ -6,6 +6,7 @@ import 'package:order_processing_app/utils/logger.dart';
 
 class AssignmentApiService {
   static const String baseUrl = 'https://api.gsutil.xyz';
+  static const String empbaseUrl = '$baseUrl/employee';
 
   // Centralized HTTP request function
   static Future<dynamic> fetchResource(String endpoint) async {
@@ -79,6 +80,36 @@ class AssignmentApiService {
     } catch (e) {
       AppLogger.logError('An error occurred in getAllRoutes: $e');
       throw Exception('Error fetching routes: $e');
+    }
+  }
+
+  static Future<void> updateEmployeeLocation(
+      String employeeId, Map<String, dynamic> locationData) async {
+    try {
+      // Convert location data to JSON string
+      String locationJsonString = jsonEncode(locationData);
+
+      AppLogger.logDebug(
+          'Received location data: $locationData'); // Add this line to print location data
+
+      final response = await http.put(
+        Uri.parse('$empbaseUrl/$employeeId/update/location'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: locationJsonString, // Use JSON string as the request body
+      );
+
+      if (response.statusCode == 200) {
+        AppLogger.logDebug('Employee location updated successfully');
+      } else {
+        AppLogger.logError(
+            'Failed to update employee location: ${response.statusCode}');
+        throw Exception('Failed to update employee location');
+      }
+    } catch (e) {
+      AppLogger.logError('Error updating employee location: $e');
+      throw Exception('Error updating employee location: $e');
     }
   }
 }

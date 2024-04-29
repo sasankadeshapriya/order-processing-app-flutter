@@ -16,4 +16,12 @@ class AppLogger {
   static void logDebug(String message) {
     _logger.d(message);
   }
+
+  static void logWarning(String message) {
+    _logger.w(message);
+  }
+
+  static void logFatal(String message) {
+    _logger.f(message);
+  }
 }
