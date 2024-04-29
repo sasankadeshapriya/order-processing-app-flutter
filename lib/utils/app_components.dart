@@ -23,6 +23,10 @@ class AppComponents {
   static const dashInventoryData = '${imagePath}dashInventoryData.png';
   static const dashAssignment = '${imagePath}dashAssignment.png';
   static const dashAssignmentData = '${imagePath}dashAssignmentData.png';
+  static const mapImage = '${imagePath}LoadingMap.png';
+  static const currentLocation = '${imagePath}currentLocation.png';
+  static const sourceLocation = '${imagePath}sourceLocation.png';
+  static const destinationLocation = '${imagePath}destinationLocation.png';
 
   //_________________icons
   static const emailIcon = '${iconPath}email.svg';

@@ -11,6 +11,7 @@ import 'package:order_processing_app/utils/app_components.dart';
 import 'package:order_processing_app/views/assignment/assignment_list.dart';
 import 'package:order_processing_app/views/auth/login.dart';
 import 'package:order_processing_app/views/main/drawer.dart';
+import 'package:order_processing_app/views/map/map_page.dart';
 
 class UserDashboard extends StatefulWidget {
   const UserDashboard({super.key});
@@ -165,6 +166,12 @@ class _UserDashboardState extends State<UserDashboard> {
               text1: "",
               text2: "",
               onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MapPage(),
+                  ),
+                );
                 print("Tapped Maps");
               },
             )
@@ -287,7 +294,13 @@ class _UserDashboardState extends State<UserDashboard> {
                     text1: "",
                     text2: "",
                     onTap: () {
-                      print("Tapped Map");
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const MapPage(),
+                        ),
+                      );
+                      print("Tapped Maps");
                     },
                   ),
                 ),
@@ -402,7 +415,13 @@ class _UserDashboardState extends State<UserDashboard> {
                     text1: "",
                     text2: "",
                     onTap: () {
-                      print("Tapped Map");
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const MapPage(),
+                        ),
+                      );
+                      print("Tapped Maps");
                     },
                   ),
                 ),
