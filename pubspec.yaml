@@ -42,6 +42,8 @@ dependencies:
   jumping_dot: ^0.0.6
   google_fonts: ^6.2.1
   awesome_dialog: ^3.2.0
+  google_maps_flutter: ^2.6.1
+  intl: ^0.19.0
 
 dev_dependencies:
   flutter_test:
