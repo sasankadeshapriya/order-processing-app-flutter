@@ -62,6 +62,7 @@ class AssignmentApiService {
       Map<String, dynamic> detailedAssignment = {
         'assignment_date': assignment['assign_date'] ?? 'Date Not Available',
         'vehicle_number': vehicle.vehicleNo,
+        'route_id': route.id,
         'route_name': route.name,
         'waypoints': waypoints, // Include waypoints in the assignment details
       };
@@ -116,6 +117,42 @@ class AssignmentApiService {
     } catch (e) {
       AppLogger.logError('Error updating employee location: $e');
       throw Exception('Error updating employee location: $e');
+    }
+  }
+
+  // Method to fetch client locations by route ID
+  static Future<List<dynamic>> getClientLocationsByRouteId(int routeId) async {
+    print(
+        "Attempting to fetch client locations for route ID: $routeId"); // Print to verify route ID is passed
+
+    try {
+      final url = Uri.parse('$baseUrl/client/route/$routeId');
+      print("Constructed URL: $url"); // Debug the URL to ensure it is correct
+
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      print(
+          'HTTP Status Code: ${response.statusCode}'); // Debug response status
+      print('HTTP Response Body: ${response.body}'); // Debug response content
+
+      if (response.statusCode == 200) {
+        // Parse the JSON data to a list
+        List<dynamic> clients = json.decode(response.body);
+        print("Received client data: $clients"); // Debug to print client data
+        return clients;
+      } else if (response.statusCode == 404) {
+        throw Exception('No clients found for this route');
+      } else {
+        throw Exception('Failed to fetch client locations');
+      }
+    } catch (e) {
+      print('Error occurred while fetching client locations: $e');
+      throw Exception('Error fetching client locations');
     }
   }
 }

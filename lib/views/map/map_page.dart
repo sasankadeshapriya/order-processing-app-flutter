@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:intl/intl.dart';
 import 'package:order_processing_app/common/location_check_pop.dart';
 import 'package:order_processing_app/common/location_service.dart';
 import 'package:order_processing_app/common/map_builder.dart';
@@ -12,6 +13,7 @@ import 'package:order_processing_app/utils/app_components.dart';
 import 'package:order_processing_app/utils/logger.dart';
 import 'package:order_processing_app/views/map/loading.dart';
 import 'package:http/http.dart' as http;
+import 'package:order_processing_app/widgets/assignment_container_widget.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -36,6 +38,9 @@ class _MapPageState extends State<MapPage> {
   Set<Marker> markers = {};
 
   bool _isLoading = true;
+  String _vehicleNumber = 'N/A';
+  String _routeName = 'No Route Assigned';
+  int _clientCount = 0;
 
   @override
   void initState() {
@@ -44,7 +49,7 @@ class _MapPageState extends State<MapPage> {
     _locationService = LocationService();
     _locationService.startLocationService(_updateCurrentLocation, context);
     _setCustomMarkerIcon();
-    _fetchPolyline();
+    _fetchAssignmentAndClients();
   }
 
   @override
@@ -112,6 +117,13 @@ class _MapPageState extends State<MapPage> {
     return Stack(
       children: [
         _buildMap(),
+        FloatingContainer(
+          vehicleNumber: _vehicleNumber,
+          routeName: _routeName,
+          clientCount: _clientCount, // Pass the count of client locations
+          date: DateFormat('yyyy-MM-dd')
+              .format(DateTime.now()), // Update this as needed
+        ),
       ],
     );
   }
@@ -146,13 +158,13 @@ class _MapPageState extends State<MapPage> {
     setState(() {});
   }
 
-  Future<void> _fetchPolyline() async {
+  void _fetchAssignmentAndClients() async {
     setState(() {
       _isLoading = true;
     });
 
     try {
-      int employeeId = 1;
+      int employeeId = 1; // Assuming you have the employeeId beforehand
       List<Map<String, dynamic>> assignments =
           await AssignmentApiService.getAssignmentsWithDetails(employeeId);
       DateTime today = DateTime.now();
@@ -164,15 +176,18 @@ class _MapPageState extends State<MapPage> {
             assignDate.month == today.month &&
             assignDate.day == today.day) {
           foundAssignmentsForToday = true;
-          LatLng start = assignment['waypoints'].first;
-          LatLng destination = assignment['waypoints'].last;
-          List<LatLng> waypoints = assignment['waypoints']
-              .skip(1)
-              .take(assignment['waypoints'].length - 2)
-              .toList();
 
-          List<LatLng> routeCoordinates =
-              await getRouteCoordinates(start, destination, waypoints);
+          // Correctly process waypoints assuming it's a list of LatLng objects
+          List<LatLng> waypoints = (assignment['waypoints'] as List)
+              .map((wp) => LatLng(wp.latitude, wp.longitude))
+              .toList();
+          LatLng start = waypoints.first;
+          LatLng destination = waypoints.last;
+
+          List<LatLng> routeCoordinates = await getRouteCoordinates(
+              start,
+              destination,
+              waypoints.skip(1).take(waypoints.length - 2).toList());
 
           polylines[PolylineId('route_${assignment['route_name']}')] = Polyline(
             polylineId: PolylineId('route_${assignment['route_name']}'),
@@ -181,8 +196,18 @@ class _MapPageState extends State<MapPage> {
             width: 8,
           );
 
+          _vehicleNumber = assignment['vehicle_number'];
+          _routeName = assignment['route_name'];
+
           markers.clear();
-          setMarkers(start, destination, assignment['route_name']);
+          setMarkers(start, destination, _routeName);
+
+          int routeId = assignment['route_id']; // Extract the route ID
+          print("Route ID: $routeId"); // Print the route ID for debugging
+
+          fetchClientLocations(routeId); // Fetch and display client locations
+
+          break; // Process only the first matching assignment for simplicity
         }
       }
 
@@ -190,7 +215,8 @@ class _MapPageState extends State<MapPage> {
         _showNoAssignmentsAlert();
       }
     } catch (e) {
-      AppLogger.logError('Failed to fetch route data: $e');
+      print('Error fetching assignments: $e');
+      AppLogger.logError('Failed to fetch assignment data: $e');
     }
 
     setState(() {
@@ -283,6 +309,40 @@ class _MapPageState extends State<MapPage> {
       points.add(p);
     }
     return points;
+  }
+
+  void fetchClientLocations(int routeId) async {
+    try {
+      List<dynamic> clientLocations =
+          await AssignmentApiService.getClientLocationsByRouteId(routeId);
+      AppLogger.logInfo(
+          "Client Locations for Route ID $routeId: ${clientLocations.length} found.");
+
+      setState(() {
+        _clientCount =
+            clientLocations.length; // Store the count of client locations
+
+        // Add markers for each client location to the map
+        for (var location in clientLocations) {
+          double lat = double.parse(location['latitude']);
+          double lng = double.parse(location['longitude']);
+          LatLng position = LatLng(lat, lng);
+          String organization = location['organization_name'];
+          markers.add(Marker(
+            markerId: MarkerId('client_${lat}_$lng'),
+            position: position,
+            icon: BitmapDescriptor.defaultMarker, // Customize as needed
+            infoWindow: InfoWindow(
+              title: organization ?? "Unknown Organization",
+              snippet: 'Client at Route $routeId',
+            ),
+          ));
+        }
+      });
+    } catch (e) {
+      print('Failed to fetch client locations: $e');
+      throw Exception('Error fetching client locations: $e');
+    }
   }
 
   void _cameraToPosition(LatLng pos) async {
