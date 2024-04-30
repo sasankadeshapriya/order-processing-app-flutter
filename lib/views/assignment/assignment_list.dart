@@ -6,6 +6,7 @@ import 'package:order_processing_app/models/assignment.dart';
 import 'package:order_processing_app/services/assignment_api_service.dart';
 import 'package:order_processing_app/utils/app_colors.dart';
 import 'package:order_processing_app/utils/app_components.dart';
+import 'package:order_processing_app/views/map/map_page.dart';
 
 class AssignmentList extends StatefulWidget {
   const AssignmentList({Key? key}) : super(key: key);
@@ -169,6 +170,26 @@ class _AssignmentListState extends State<AssignmentList> {
         ],
       ),
       body: _buildBody(),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: FloatingActionButton(
+          onPressed: () {
+            // Navigate to the map view
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) =>
+                      const MapPage()), // Assuming MapPage is your map widget
+            );
+          },
+          backgroundColor: AppColor.accentColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(50),
+            side: const BorderSide(color: Colors.white, width: 2),
+          ),
+          child: const Icon(Icons.map_rounded, color: Colors.white),
+        ),
+      ),
     );
   }
 
@@ -216,6 +237,7 @@ class _AssignmentListState extends State<AssignmentList> {
         itemCount: filteredAssignments.length,
         itemBuilder: (context, index) {
           final assignment = filteredAssignments[index];
+          print(assignment.assignDate);
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 5),
             child: AssignmentCard(

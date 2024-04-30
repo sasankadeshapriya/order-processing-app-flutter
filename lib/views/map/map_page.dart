@@ -1,14 +1,17 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-
+import 'dart:convert';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:order_processing_app/common/location_check_pop.dart';
 import 'package:order_processing_app/common/location_service.dart';
 import 'package:order_processing_app/common/map_builder.dart';
-import 'package:order_processing_app/common/polyline_creation.dart';
+import 'package:order_processing_app/constants/consts.dart';
+import 'package:order_processing_app/services/assignment_api_service.dart';
 import 'package:order_processing_app/utils/app_colors.dart';
 import 'package:order_processing_app/utils/app_components.dart';
+import 'package:order_processing_app/utils/logger.dart';
 import 'package:order_processing_app/views/map/loading.dart';
+import 'package:http/http.dart' as http;
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -23,9 +26,6 @@ class _MapPageState extends State<MapPage> {
   final Completer<GoogleMapController> _mapController =
       Completer<GoogleMapController>();
 
-  static const LatLng _pGooglePlex = LatLng(37.4223, -122.0848);
-  static const LatLng _pApplePark = LatLng(37.3346, -122.0090);
-
   LatLng? _currentP;
 
   BitmapDescriptor? sourceIcon;
@@ -33,6 +33,7 @@ class _MapPageState extends State<MapPage> {
   BitmapDescriptor? currentLocationIcon;
 
   Map<PolylineId, Polyline> polylines = {};
+  Set<Marker> markers = {};
 
   bool _isLoading = true;
 
@@ -41,39 +42,41 @@ class _MapPageState extends State<MapPage> {
     super.initState();
     _mapBuilder = MapBuilder();
     _locationService = LocationService();
-    _locationService.startLocationService(_updateCurrentLocation,
-        context); // Start listening for location updates
-    _setCustomMarkerIcon(); // Set custom marker icons
-    _fetchPolyline(); // Fetch polyline data
+    _locationService.startLocationService(_updateCurrentLocation, context);
+    _setCustomMarkerIcon();
+    _fetchPolyline();
   }
 
   @override
   void dispose() {
-    _locationService
-        .stopLocationService(); // Stop location updates when the widget is disposed
+    _locationService.stopLocationService();
     super.dispose();
   }
 
-  // Update the current location on the map
   void _updateCurrentLocation(LatLng location) {
     setState(() {
       _currentP = location;
+      _updateCurrentLocationMarker(location);
     });
-    _cameraToPosition(location); // Move camera to the updated location
-
-    // Check if GPS signal is available
+    _cameraToPosition(location);
     if (_currentP == null) {
-      // GPS signal is lost, show location service dialog
       showLocationServiceDialog(context, false);
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: _isLoading ? null : _buildAppBar(),
-      body: _isLoading ? const Loading() : _buildBody(),
+  void _updateCurrentLocationMarker(LatLng location) {
+    Marker currentLocationMarker = Marker(
+      markerId: const MarkerId("currentLocation"),
+      position: location,
+      icon: currentLocationIcon ?? BitmapDescriptor.defaultMarker,
+      infoWindow: const InfoWindow(title: "Current Location"),
     );
+
+    setState(() {
+      markers
+          .removeWhere((m) => m.markerId == const MarkerId("currentLocation"));
+      markers.add(currentLocationMarker);
+    });
   }
 
   AppBar _buildAppBar() {
@@ -93,7 +96,7 @@ class _MapPageState extends State<MapPage> {
         ),
       ),
       title: const Text(
-        "Route Management",
+        "Map",
         style: TextStyle(
           color: Color(0xFF464949),
           fontSize: 16,
@@ -114,76 +117,19 @@ class _MapPageState extends State<MapPage> {
   }
 
   Widget _buildMap() {
-    return _mapBuilder.buildMap(
-      initialPosition: _currentP,
-      markers: _currentP != null ? _buildMarkers() : {},
+    return GoogleMap(
+      initialCameraPosition:
+          CameraPosition(target: _currentP ?? const LatLng(0, 0), zoom: 14.0),
+      polylines: Set<Polyline>.from(polylines.values),
+      markers: markers,
       onMapCreated: _onMapCreated,
     );
   }
 
-  Set<Marker> _buildMarkers() {
-    Set<Marker> markers = {};
-
-    if (_currentP != null && currentLocationIcon != null) {
-      markers.add(
-        Marker(
-          markerId: const MarkerId("_currentLocation"),
-          icon: currentLocationIcon!,
-          position: _currentP!,
-        ),
-      );
-    }
-
-    if (sourceIcon != null) {
-      markers.add(
-        Marker(
-          markerId: const MarkerId("_sourceLocation"),
-          icon: sourceIcon!,
-          position: _pGooglePlex,
-        ),
-      );
-    }
-
-    if (destinationIcon != null) {
-      markers.add(
-        Marker(
-          markerId: const MarkerId("_destinationLocation"),
-          icon: destinationIcon!,
-          position: _pApplePark,
-        ),
-      );
-    }
-
-    return markers;
-  }
-
-  // Callback function when the map is created
   void _onMapCreated(GoogleMapController controller) {
     _mapController.complete(controller);
   }
 
-  // Set custom marker icons
-  void _setCustomMarkerIcon() {
-    _loadBitmapDescriptor(AppComponents.sourceLocation).then((icon) {
-      setState(() {
-        sourceIcon = icon;
-      });
-    });
-
-    _loadBitmapDescriptor(AppComponents.destinationLocation).then((icon) {
-      setState(() {
-        destinationIcon = icon;
-      });
-    });
-
-    _loadBitmapDescriptor(AppComponents.currentLocation).then((icon) {
-      setState(() {
-        currentLocationIcon = icon;
-      });
-    });
-  }
-
-  // Load custom marker icons from assets
   Future<BitmapDescriptor> _loadBitmapDescriptor(String assetName) async {
     return BitmapDescriptor.fromAssetImage(
       ImageConfiguration.empty,
@@ -191,23 +137,166 @@ class _MapPageState extends State<MapPage> {
     );
   }
 
-  // Fetch polyline data from service
-  void _fetchPolyline() async {
-    // Simulate fetching polyline data
-    await Future.delayed(const Duration(seconds: 2));
-    List<LatLng> coordinates =
-        await PolylineService.getPolyLinePoints(_pGooglePlex, _pApplePark);
-    PolylineService.generatepolyLineFromPoints(coordinates, polylines);
+  void _setCustomMarkerIcon() async {
+    sourceIcon = await _loadBitmapDescriptor(AppComponents.sourceLocation);
+    destinationIcon =
+        await _loadBitmapDescriptor(AppComponents.destinationLocation);
+    currentLocationIcon =
+        await _loadBitmapDescriptor(AppComponents.currentLocation);
+    setState(() {});
+  }
+
+  Future<void> _fetchPolyline() async {
     setState(() {
-      _isLoading = false; // Set isLoading to false after fetching data
+      _isLoading = true;
+    });
+
+    try {
+      int employeeId = 1;
+      List<Map<String, dynamic>> assignments =
+          await AssignmentApiService.getAssignmentsWithDetails(employeeId);
+      DateTime today = DateTime.now();
+      bool foundAssignmentsForToday = false;
+
+      for (var assignment in assignments) {
+        DateTime assignDate = DateTime.parse(assignment['assignment_date']);
+        if (assignDate.year == today.year &&
+            assignDate.month == today.month &&
+            assignDate.day == today.day) {
+          foundAssignmentsForToday = true;
+          LatLng start = assignment['waypoints'].first;
+          LatLng destination = assignment['waypoints'].last;
+          List<LatLng> waypoints = assignment['waypoints']
+              .skip(1)
+              .take(assignment['waypoints'].length - 2)
+              .toList();
+
+          List<LatLng> routeCoordinates =
+              await getRouteCoordinates(start, destination, waypoints);
+
+          polylines[PolylineId('route_${assignment['route_name']}')] = Polyline(
+            polylineId: PolylineId('route_${assignment['route_name']}'),
+            color: Colors.redAccent,
+            points: routeCoordinates,
+            width: 8,
+          );
+
+          markers.clear();
+          setMarkers(start, destination, assignment['route_name']);
+        }
+      }
+
+      if (!foundAssignmentsForToday) {
+        _showNoAssignmentsAlert();
+      }
+    } catch (e) {
+      AppLogger.logError('Failed to fetch route data: $e');
+    }
+
+    setState(() {
+      _isLoading = false;
     });
   }
 
-  // Move the camera to a specific position
+  void _showNoAssignmentsAlert() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("No Assignments"),
+          content: const Text("There are no assignments scheduled for today."),
+          actions: <Widget>[
+            TextButton(
+              child: const Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void setMarkers(LatLng start, LatLng destination, String routeName) {
+    markers.add(Marker(
+      markerId: MarkerId('source_$routeName'),
+      position: start,
+      icon: sourceIcon ?? BitmapDescriptor.defaultMarker,
+      infoWindow:
+          InfoWindow(title: 'Start of $routeName', snippet: 'Start Point'),
+    ));
+
+    markers.add(Marker(
+      markerId: MarkerId('destination_$routeName'),
+      position: destination,
+      icon: destinationIcon ?? BitmapDescriptor.defaultMarker,
+      infoWindow:
+          InfoWindow(title: 'End of $routeName', snippet: 'Destination'),
+    ));
+  }
+
+  Future<List<LatLng>> getRouteCoordinates(
+      LatLng start, LatLng destination, List<LatLng> waypoints) async {
+    String waypointsStr = waypoints
+        .map((point) => "${point.latitude},${point.longitude}")
+        .join('|');
+    String url =
+        'https://maps.googleapis.com/maps/api/directions/json?origin=${start.latitude},${start.longitude}&destination=${destination.latitude},${destination.longitude}&waypoints=optimize:true|$waypointsStr&key=$GOOGLE_MAPS_API_KEY';
+    http.Response response = await http.get(Uri.parse(url));
+    Map values = jsonDecode(response.body);
+    List<LatLng> routeCoordinates = [];
+
+    if (values['routes'].isNotEmpty) {
+      String polyline = values['routes'][0]['overview_polyline']['points'];
+      routeCoordinates = decodePolyline(polyline);
+    }
+    return routeCoordinates;
+  }
+
+  List<LatLng> decodePolyline(String encoded) {
+    List<LatLng> points = [];
+    int index = 0, len = encoded.length;
+    int lat = 0, lng = 0;
+
+    while (index < len) {
+      int b, shift = 0, result = 0;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lat += dlat;
+
+      shift = 0;
+      result = 0;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lng += dlng;
+
+      LatLng p = LatLng((lat / 1E5).toDouble(), (lng / 1E5).toDouble());
+      points.add(p);
+    }
+    return points;
+  }
+
   void _cameraToPosition(LatLng pos) async {
     final GoogleMapController controller = await _mapController.future;
     controller.animateCamera(
       CameraUpdate.newLatLngZoom(pos, 14),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: _isLoading ? null : _buildAppBar(),
+      body: _isLoading ? const Loading() : _buildBody(),
     );
   }
 }
