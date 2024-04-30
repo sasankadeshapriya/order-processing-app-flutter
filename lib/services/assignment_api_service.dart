@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:order_processing_app/models/route.dart';
 import 'package:order_processing_app/models/vehicle.dart';
@@ -53,12 +54,18 @@ class AssignmentApiService {
           (r) => r.id == assignment['route_id'],
           orElse: () => Route.dummy());
 
+      List<LatLng> waypoints = route.waypoints
+          .map((wp) => LatLng(double.parse(wp['latitude'].toString()),
+              double.parse(wp['longitude'].toString())))
+          .toList();
+
       Map<String, dynamic> detailedAssignment = {
         'assignment_date': assignment['assign_date'] ?? 'Date Not Available',
         'vehicle_number': vehicle.vehicleNo,
         'route_name': route.name,
+        'waypoints': waypoints, // Include waypoints in the assignment details
       };
-      print("Processed assignment details: $detailedAssignment");
+      print('Processed assignment: $detailedAssignment');
       return detailedAssignment;
     }).toList();
   }
@@ -89,8 +96,7 @@ class AssignmentApiService {
       // Convert location data to JSON string
       String locationJsonString = jsonEncode(locationData);
 
-      AppLogger.logDebug(
-          'Received location data: $locationData'); // Add this line to print location data
+      AppLogger.logDebug('Received location data: $locationData');
 
       final response = await http.put(
         Uri.parse('$empbaseUrl/$employeeId/update/location'),
