@@ -48,6 +48,8 @@ dependencies:
   location: ^6.0.1
   flutter_polyline_points: ^2.0.0
   flutter_screenutil: ^5.9.0
+  expansion_tile_card: ^3.0.0
+  dropdown_button2: ^2.3.9
 
 dev_dependencies:
   flutter_test:
