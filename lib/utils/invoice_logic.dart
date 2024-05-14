@@ -54,6 +54,22 @@ class InvoiceLogic {
          selectedPaymentMethod != null &&
          productQuantities.isNotEmpty;
 }
+ List<Map<String, dynamic>> getFormattedProductDetails() {
+    List<Map<String, dynamic>> productDetails = [];
+    
+    productQuantities.forEach((product, quantity) {
+      final double price = getPrice(product, selectedPaymentMethod!);
+      final double amount = price * quantity;
+      productDetails.add({
+        'title': product.name,
+        'price': price.toStringAsFixed(2),
+        'quantity': quantity,
+        'amount': amount.toStringAsFixed(2),
+      });
+    });
+
+    return productDetails;
+  }
 
 
   void disposeControllers() {
