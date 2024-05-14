@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
+
+import '../models/clients_modle.dart';
 // Import the logger package
 
 class ClientService {
@@ -20,7 +23,7 @@ class ClientService {
             'organizationName': client['organization_name'],
             'name': client['name'],
             'icon': Icons.person,
-            'discount':client['discount'] // Set a default icon for each client
+            'discount': client['discount'] // Set a default icon for each client
           };
         }).toList();
         //Logger().f('Client Response body: ${response.body}');
@@ -33,6 +36,45 @@ class ClientService {
     } catch (error) {
       print('Error fetching clients: $error');
       rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> postClientData(Client client) async {
+    const String apiUrl = '$baseUrl/client';
+    try {
+      final String requestBody = jsonEncode(client.toJson(forPost: true));
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: requestBody,
+      );
+
+      Logger().i('Sending request to $apiUrl');
+      Logger().i('Request body: $requestBody');
+
+      if (response.statusCode == 201) {
+        Logger().i('Client successfully created');
+        Logger().i('Response body: ${response.body}');
+        return {'success': true, 'data': jsonDecode(response.body)};
+      } else {
+        Logger()
+            .w('Failed to create client. Status code: ${response.statusCode}');
+        Logger().w('Response body: ${response.body}');
+
+        final Map<String, dynamic> responseBody = jsonDecode(response.body);
+        if (responseBody.containsKey('message')) {
+          Logger().w('Error message: ${responseBody['message']}');
+        }
+        return {
+          'success': false,
+          'message': responseBody['message'] ?? 'Failed to create client',
+        };
+      }
+    } catch (e) {
+      Logger().e('Exception occurred while sending data: $e');
+      return {'success': false, 'message': 'Exception occurred: $e'};
     }
   }
 }

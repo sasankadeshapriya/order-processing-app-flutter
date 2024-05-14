@@ -15,6 +15,7 @@ import '../../models/clients_modle.dart';
 import '../../models/payments_modle.dart';
 import '../../models/product_modle.dart';
 import '../../utils/invoice_logic.dart';
+import 'print_invoice.dart';
 
 class InvoicePage extends StatefulWidget {
   const InvoicePage({
@@ -772,8 +773,10 @@ class _InvoicePageState extends State<InvoicePage> {
       buttonText: 'Print Invoice',
       onTap: () {
         if (invoiceLogic.canPrintInvoice()) {
-          // Logic to proceed with printing the invoice
-          // e.g., Navigator.push(...)
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => PrintInvoice(invoiceLogic: invoiceLogic)),
+          );
         } else {
           // Show an error alert if the requirements are not met
           AleartBox.showAleart(
