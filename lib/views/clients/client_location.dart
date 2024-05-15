@@ -1,15 +1,14 @@
 import 'dart:async';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
+import 'package:logger/logger.dart';
 import '../../components/alert_dialog.dart';
 import '../../components/custom_button.dart';
-import '../map/loading.dart'; // Replace 'your_project_name_here' with the actual project name
 
 class MapSample extends StatefulWidget {
-  const MapSample({Key? key}) : super(key: key);
+  const MapSample({super.key});
 
   @override
   State<MapSample> createState() => MapSampleState();
@@ -20,10 +19,11 @@ class MapSampleState extends State<MapSample> {
       Completer<GoogleMapController>();
   late Location _location;
   LatLng? _currentPosition;
-  bool _isLoadingLocation = false;
+  bool _isLoadingLocation = true;
+
   Set<Marker> _markers = {};
+
   bool _isTapped = false;
-  // Added this flag to track loading state
   late StreamSubscription<LocationData> _locationSubscription;
 
   static const CameraPosition _kGooglePlex = CameraPosition(
@@ -33,33 +33,12 @@ class MapSampleState extends State<MapSample> {
 
   @override
   void initState() {
-    _isLoadingLocation = true; // Start loading when the widget is initialized
     super.initState();
     _location = Location();
-    //_getCurrentLocation();
     _locationSubscription = _location.onLocationChanged.listen((locationData) {
       final location = LatLng(locationData.latitude!, locationData.longitude!);
       _updateCurrentLocation(location);
     });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: _isLoadingLocation
-          ? FutureBuilder(
-              future: Future.delayed(
-                  Duration(seconds: 3)), // Add a delay of 2 seconds
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Loading(); // Show loading screen while waiting
-                } else {
-                  return _buildMapWidget(); // Show map after the delay
-                }
-              },
-            )
-          : _buildMapWidget(), // Show map if not loading
-    );
   }
 
   @override
@@ -69,7 +48,7 @@ class MapSampleState extends State<MapSample> {
   }
 
   @override
-  Widget _buildMapWidget() {
+  Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
@@ -113,7 +92,6 @@ class MapSampleState extends State<MapSample> {
                       bottom: 15.0, left: 5.0, right: 5.0, top: 10.0),
                   child: CustomButton(
                     buttonText: 'Select Client  Location',
-                    //svgIcon: 'assets/icons/location.svg',
                     isLoading: _isTapped,
                     onTap: _getCurrentLocation,
                   ),
@@ -134,9 +112,9 @@ class MapSampleState extends State<MapSample> {
   }
 
   void _updateCurrentLocation(LatLng location) {
+    Logger().w('inside updateCurrentLocation');
     setState(() {
       _currentPosition = location;
-      _isLoadingLocation = false; // Stop loading when location is fetched
     });
     _cameraToPosition(location); // Update camera position when location changes
 
@@ -148,6 +126,7 @@ class MapSampleState extends State<MapSample> {
   }
 
   void _updateMarkers() {
+    Logger().w('inside updateMarkers');
     if (_currentPosition != null) {
       setState(() {
         _markers = {
@@ -164,6 +143,7 @@ class MapSampleState extends State<MapSample> {
   }
 
   void _getCurrentLocation() async {
+    Logger().w('inside getCurrentLocation');
     try {
       LocationData locationData = await _location.getLocation();
       LatLng location = LatLng(locationData.latitude!, locationData.longitude!);
@@ -177,21 +157,34 @@ class MapSampleState extends State<MapSample> {
   }
 
   void _getCurrentLocationAndNavigateBack() async {
+    Logger().w('inside getCurrentLocationAndNavigateBack');
     try {
       if (_currentPosition == null) {
         LocationData locationData = await _location.getLocation();
         _currentPosition =
             LatLng(locationData.latitude!, locationData.longitude!);
-        await AleartBox.showAleart(
-          context,
-          DialogType.success,
-          'Success',
-          'Locatiopn Add successfully ',
+        _isLoadingLocation = false;
+        await showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Success'),
+              content: Text('Location added successfully.'),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Close the dialog
+                    Navigator.pop(context, {
+                      'latitude': _currentPosition!.latitude,
+                      'longitude': _currentPosition!.longitude
+                    });
+                  },
+                  child: Text('OK'),
+                ),
+              ],
+            );
+          },
         );
-        Navigator.pop(context, {
-          'latitude': _currentPosition!.latitude,
-          'longitude': _currentPosition!.longitude
-        });
       }
     } catch (e) {
       print('Error getting current location: $e');
