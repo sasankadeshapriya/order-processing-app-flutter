@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:order_processing_app/components/card_invoice.dart';
 import 'package:order_processing_app/utils/app_colors.dart';
 import 'package:order_processing_app/views/assignment/assignment_list.dart';
+import 'package:order_processing_app/views/invoice/invoice_list_page.dart';
 import 'package:order_processing_app/views/main/dashboard.dart';
 import 'package:order_processing_app/views/map/map_page.dart';
 import 'package:order_processing_app/views/splash/splashscreen.dart';
