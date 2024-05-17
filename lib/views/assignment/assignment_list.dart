@@ -19,9 +19,11 @@ class AssignmentList extends StatefulWidget {
 class _AssignmentListState extends State<AssignmentList> {
   List<Assignment> assignments = [];
   List<Assignment> filteredAssignments = [];
-  String _sortBy = 'date';
-  String _filterBy = 'all';
+  String _sortBy = 'Sort by Date';
+  String _filterBy = 'All';
+  bool _isAscending = false; // Initialize with descending order
   bool _isLoading = true;
+  DateTimeRange? _selectedDateRange;
 
   @override
   void initState() {
@@ -51,40 +53,105 @@ class _AssignmentListState extends State<AssignmentList> {
 
   void _sortAssignments() {
     setState(() {
-      if (_sortBy == 'date') {
-        filteredAssignments
-            .sort((a, b) => a.assignDate.compareTo(b.assignDate));
-      } else if (_sortBy == 'route') {
-        filteredAssignments.sort((a, b) => a.routeName.compareTo(b.routeName));
-      } else if (_sortBy == 'vehicle number') {
-        filteredAssignments.sort((a, b) => a.vehicleNo.compareTo(b.vehicleNo));
+      if (_sortBy == 'Sort by Date') {
+        filteredAssignments.sort((a, b) => _isAscending
+            ? a.assignDate.compareTo(b.assignDate)
+            : b.assignDate.compareTo(a.assignDate));
+      } else if (_sortBy == 'Sort by Route') {
+        filteredAssignments.sort((a, b) => _isAscending
+            ? a.routeName.compareTo(b.routeName)
+            : b.routeName.compareTo(a.routeName));
+      } else if (_sortBy == 'Sort by Vehicle Number') {
+        filteredAssignments.sort((a, b) => _isAscending
+            ? a.vehicleNo.compareTo(b.vehicleNo)
+            : b.vehicleNo.compareTo(a.vehicleNo));
       }
     });
+  }
+
+  void _applyDateFilter() {
+    if (_selectedDateRange != null) {
+      setState(() {
+        filteredAssignments = assignments.where((assignment) {
+          DateTime assignmentDate =
+              DateFormat('yyyy-MM-dd').parse(assignment.assignDate);
+          return assignmentDate.isAfter(_selectedDateRange!.start) &&
+              assignmentDate.isBefore(_selectedDateRange!.end);
+        }).toList();
+        _sortAssignments();
+      });
+    } else {
+      setState(() {
+        filteredAssignments = List.from(assignments);
+        _sortAssignments();
+      });
+    }
   }
 
   void _applyFilter(String filter) {
     DateTime now = DateTime.now();
     setState(() {
       _filterBy = filter;
-      switch (filter) {
-        case 'today':
-          filteredAssignments = assignments
-              .where((a) => DateFormat('yyyy-MM-dd')
-                  .parse(a.assignDate)
-                  .isAtSameMomentAs(DateTime(now.year, now.month, now.day)))
-              .toList();
-          break;
-        case 'this month':
-          filteredAssignments = assignments.where((a) {
-            DateTime date = DateFormat('yyyy-MM-dd').parse(a.assignDate);
-            return date.month == now.month && date.year == now.year;
-          }).toList();
-          break;
-        default:
-          filteredAssignments = List.from(assignments);
+      if (filter == 'Today') {
+        filteredAssignments = assignments
+            .where((a) => DateFormat('yyyy-MM-dd')
+                .parse(a.assignDate)
+                .isAtSameMomentAs(DateTime(now.year, now.month, now.day)))
+            .toList();
+        _selectedDateRange = null; // Reset the date range
+      } else if (filter == 'All') {
+        filteredAssignments = List.from(assignments);
+        _selectedDateRange = null; // Reset the date range
+      } else if (filter == 'Select Date Range' && _selectedDateRange != null) {
+        _applyDateFilter();
       }
       _sortAssignments();
     });
+  }
+
+  void _onSortBySelected(String sortBy) {
+    setState(() {
+      _sortBy = sortBy;
+      _sortAssignments(); // Call sorting function when sort by changes
+    });
+  }
+
+  void _onSortOrderChanged() {
+    setState(() {
+      _isAscending = !_isAscending;
+      _sortAssignments(); // Call sorting function when sort order changes
+    });
+  }
+
+  Future<void> _selectDateRange(BuildContext context) async {
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColor.accentColor, // header background color
+              onPrimary: Colors.white, // header text color
+              onSurface: AppColor.primaryTextColor, // body text color
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColor.accentColor, // button text color
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && picked != _selectedDateRange) {
+      setState(() {
+        _selectedDateRange = picked;
+        _applyFilter('Select Date Range');
+      });
+    }
   }
 
   @override
@@ -117,56 +184,49 @@ class _AssignmentListState extends State<AssignmentList> {
           ),
         ),
         actions: <Widget>[
-          PopupMenuButton<String>(
-            onSelected: (String result) {
-              _applyFilter(result);
-            },
-            icon: const Icon(Icons.filter_alt_outlined,
-                color: AppColor.primaryTextColor),
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              CheckedPopupMenuItem<String>(
-                value: 'all',
-                checked: _filterBy == 'all',
-                child: const Text('All assignments'),
-              ),
-              CheckedPopupMenuItem<String>(
-                value: 'today',
-                checked: _filterBy == 'today',
-                child: const Text('For today'),
-              ),
-              CheckedPopupMenuItem<String>(
-                value: 'this month',
-                checked: _filterBy == 'this month',
-                child: const Text('For this month'),
-              ),
-            ],
+          IconButton(
+            icon: Icon(
+              _isAscending ? Icons.arrow_upward : Icons.arrow_downward,
+              color: AppColor.primaryTextColor,
+              size: 24,
+            ),
+            onPressed: _onSortOrderChanged,
           ),
-          PopupMenuButton<String>(
-            onSelected: (String result) {
-              setState(() {
-                _sortBy = result;
-                _sortAssignments();
-              });
-            },
-            icon: const Icon(Icons.sort_rounded,
-                color: AppColor.primaryTextColor),
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              CheckedPopupMenuItem<String>(
-                value: 'date',
-                checked: _sortBy == 'date',
-                child: const Text('Sort by date'),
-              ),
-              CheckedPopupMenuItem<String>(
-                value: 'route',
-                checked: _sortBy == 'route',
-                child: const Text('Sort by route'),
-              ),
-              CheckedPopupMenuItem<String>(
-                value: 'vehicle number',
-                checked: _sortBy == 'vehicle number',
-                child: const Text('Sort by vehicle number'),
-              ),
-            ],
+          PopupMenuTheme(
+            data: const PopupMenuThemeData(
+              color: Colors.white,
+              textStyle: TextStyle(color: AppColor.primaryTextColor),
+            ),
+            child: PopupMenuButton<String>(
+              icon: const Icon(Icons.filter_alt_outlined),
+              onSelected: (String result) {
+                if (result == 'Select Date Range') {
+                  _selectDateRange(context);
+                } else {
+                  _applyFilter(result);
+                }
+              },
+              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                _buildRadioMenuItem('All', _filterBy),
+                _buildRadioMenuItem('Today', _filterBy),
+                _buildRadioMenuItem('Select Date Range', _filterBy),
+              ],
+            ),
+          ),
+          PopupMenuTheme(
+            data: const PopupMenuThemeData(
+              color: Colors.white,
+              textStyle: TextStyle(color: AppColor.primaryTextColor),
+            ),
+            child: PopupMenuButton<String>(
+              icon: const Icon(Icons.sort_rounded),
+              onSelected: _onSortBySelected,
+              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                _buildRadioMenuItem('Sort by Date', _sortBy),
+                _buildRadioMenuItem('Sort by Route', _sortBy),
+                _buildRadioMenuItem('Sort by Vehicle Number', _sortBy),
+              ],
+            ),
           ),
         ],
       ),
@@ -174,22 +234,41 @@ class _AssignmentListState extends State<AssignmentList> {
       floatingActionButton: Padding(
         padding: const EdgeInsets.all(12.0),
         child: FloatingActionButton(
+          backgroundColor: AppColor.accentColor,
           onPressed: () {
-            // Navigate to the map view
             Navigator.push(
               context,
-              MaterialPageRoute(
-                  builder: (context) =>
-                      const MapPage()), // Assuming MapPage is your map widget
+              MaterialPageRoute(builder: (context) => const MapPage()),
             );
           },
-          backgroundColor: AppColor.accentColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(50),
-            side: const BorderSide(color: Colors.white, width: 2),
-          ),
           child: const Icon(Icons.map_rounded, color: Colors.white),
         ),
+      ),
+    );
+  }
+
+  PopupMenuItem<String> _buildRadioMenuItem(String value, String groupValue) {
+    return PopupMenuItem<String>(
+      value: value,
+      child: Row(
+        children: [
+          Radio<String>(
+            value: value,
+            groupValue: groupValue,
+            onChanged: (String? newValue) {
+              if (newValue != null) {
+                if (newValue == 'Select Date Range') {
+                  _selectDateRange(context);
+                } else {
+                  _applyFilter(newValue);
+                }
+                Navigator.pop(context); // Close the popup menu after selection
+              }
+            },
+            activeColor: AppColor.accentColor,
+          ),
+          Text(value),
+        ],
       ),
     );
   }
@@ -197,7 +276,7 @@ class _AssignmentListState extends State<AssignmentList> {
   Widget _buildBody() {
     return Column(
       children: [
-        _buildStatusHeader(_filterBy), // Update header based on filter
+        _buildStatusHeader(), // Update header based on selected date range
         const SizedBox(height: 14),
         Expanded(
           child: _isLoading
@@ -238,7 +317,6 @@ class _AssignmentListState extends State<AssignmentList> {
         itemCount: filteredAssignments.length,
         itemBuilder: (context, index) {
           final assignment = filteredAssignments[index];
-          print(assignment.assignDate);
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 5),
             child: AssignmentCard(
@@ -252,26 +330,28 @@ class _AssignmentListState extends State<AssignmentList> {
     );
   }
 
-  Widget _buildStatusHeader(String filter) {
-    String headerText = 'All'; // Default header text
-    if (filter == 'today') {
+  Widget _buildStatusHeader() {
+    String headerText = 'All Assignments'; // Default header text
+    if (_selectedDateRange != null) {
+      headerText =
+          'Assignments from ${DateFormat('yyyy-MM-dd').format(_selectedDateRange!.start)} to ${DateFormat('yyyy-MM-dd').format(_selectedDateRange!.end)}';
+    } else if (_filterBy == 'Today') {
       headerText = 'Assignments for Today';
-    } else if (filter == 'this month') {
-      headerText = 'Assignments for This Month';
     }
     return Container(
       padding: const EdgeInsets.all(5),
       width: 350,
       decoration: BoxDecoration(
-          color: AppColor.backgroundColor,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColor.primaryTextColor, width: 2)),
+        color: const Color.fromARGB(17, 200, 180, 0),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColor.primaryTextColor, width: 2),
+      ),
       child: Text(
         headerText,
         style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.bold,
-          color: AppColor.primaryTextColor,
+          color: AppColor.accentColor,
           fontFamily: AppComponents.fontSFProTextSemibold,
         ),
         textAlign: TextAlign.center,
