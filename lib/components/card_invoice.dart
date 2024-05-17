@@ -1,14 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:order_processing_app/utils/app_colors.dart';
 
 class InvoiceCard extends StatelessWidget {
   const InvoiceCard({
     Key? key,
+    required this.organizationName,
+    required this.createdAt,
+    required this.creditPeriodEndDate,
+    required this.paidAmount,
+    required this.totalAmount,
+    required this.referenceNumber,
   }) : super(key: key);
+
+  final String organizationName;
+  final String createdAt;
+  final String creditPeriodEndDate;
+  final double paidAmount;
+  final double totalAmount;
+  final String referenceNumber;
 
   @override
   Widget build(BuildContext context) {
+    // Extracting month abbreviation and date from createdAt
+    final DateTime createdDate = DateTime.parse(createdAt);
+    final String monthAbbreviation = DateFormat('MMM').format(createdDate);
+    final String day = DateFormat('dd').format(createdDate);
+
+    // Formatting creditPeriodEndDate as month/day
+    final DateTime endDate = DateTime.parse(creditPeriodEndDate);
+    final String endDateFormatted = DateFormat('MM/dd').format(endDate);
+
+    // Calculating whether the invoice is fully or partially received
+    bool fullyReceived = paidAmount == totalAmount;
+    String statusText = fullyReceived ? 'Received' : 'Partially received';
+    Color statusColor =
+        fullyReceived ? AppColor.successColor : AppColor.processingColor;
+
     return GestureDetector(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 8),
@@ -31,7 +60,7 @@ class InvoiceCard extends StatelessWidget {
             Column(
               children: [
                 Text(
-                  'APR',
+                  monthAbbreviation, // Displaying month abbreviation
                   style: GoogleFonts.poppins(
                     color: AppColor.primaryColorLight,
                     fontSize: 10,
@@ -39,9 +68,9 @@ class InvoiceCard extends StatelessWidget {
                     letterSpacing: 1,
                   ),
                 ),
-                const Text(
-                  '12',
-                  style: TextStyle(
+                Text(
+                  day, // Placeholder for date
+                  style: const TextStyle(
                     color: AppColor.primaryColorLight,
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -57,55 +86,46 @@ class InvoiceCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "empName",
+                    organizationName,
                     style: GoogleFonts.poppins(
                       color: AppColor.primaryTextColor,
-                      fontSize: 16,
+                      fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Text(
-                        'INV45',
-                        style: GoogleFonts.poppins(
-                          color: AppColor.idTextColorDark,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 1,
+                  Text(
+                    referenceNumber,
+                    style: GoogleFonts.poppins(
+                      color: AppColor.idTextColorDark,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: statusColor,
                         ),
+                        borderRadius: BorderRadius.circular(14),
                       ),
-                      const SizedBox(
-                        width: 10,
-                      ),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: AppColor.widgetBackgroundColor,
-                          border: Border.all(
-                            color: AppColor.successColor,
-                          ),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Center(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text(
-                                'Received',
-                                textAlign: TextAlign.center,
-                                style: GoogleFonts.poppins(
-                                  color: AppColor.successColor,
-                                  fontSize: 8,
-                                  letterSpacing: 1,
-                                ),
-                              ),
-                            ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Text(
+                          statusText,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            color: statusColor,
+                            fontSize: 8,
+                            letterSpacing: 1,
                           ),
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ],
               ),
@@ -114,7 +134,7 @@ class InvoiceCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  'LKR 21,000.00',
+                  'LKR $totalAmount',
                   textAlign: TextAlign.right,
                   style: GoogleFonts.poppins(
                     color: AppColor.primaryTextColor,
@@ -125,14 +145,27 @@ class InvoiceCard extends StatelessWidget {
                 const SizedBox(
                   height: 3,
                 ),
-                Text(
-                  'LKR 00.00',
-                  textAlign: TextAlign.right,
-                  style: GoogleFonts.poppins(
-                    color: AppColor.primaryTextColor,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w300,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      endDateFormatted, // Displaying month/day of end date
+                      style: GoogleFonts.poppins(
+                        color: AppColor.primaryTextColor,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w300,
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      'LKR $paidAmount',
+                      textAlign: TextAlign.right,
+                      style: GoogleFonts.poppins(
+                        color: AppColor.primaryTextColor,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:logger/web.dart';
-import 'package:order_processing_app/components/custom_button.dart';
-import 'package:order_processing_app/services/product_api_service.dart';
-import 'package:order_processing_app/services/token_manager.dart';
 import 'package:order_processing_app/utils/app_colors.dart';
 import 'package:order_processing_app/utils/app_components.dart';
 import 'package:order_processing_app/views/assignment/assignment_list.dart';
-import 'package:order_processing_app/views/auth/login.dart';
+import 'package:order_processing_app/views/invoice/invoice_list_page.dart';
 import 'package:order_processing_app/views/main/drawer.dart';
+import 'package:order_processing_app/views/map/map_page.dart';
+import '../clients/client_form.dart';
+import '../invoice/invoicePage.dart';
 
 class UserDashboard extends StatefulWidget {
   const UserDashboard({super.key});
@@ -109,6 +108,12 @@ class _UserDashboardState extends State<UserDashboard> {
               text1: "",
               text2: "",
               onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const InvoiceList(),
+                  ),
+                );
                 print("Tapped Invoices");
               },
             ),
@@ -130,6 +135,13 @@ class _UserDashboardState extends State<UserDashboard> {
               text2: "",
               onTap: () {
                 print("Tapped Clients");
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ClientForm(),
+                  ),
+                );
+                print("Tapped Invoices");
               },
             ),
             containerRow1(
@@ -165,6 +177,12 @@ class _UserDashboardState extends State<UserDashboard> {
               text1: "",
               text2: "",
               onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MapPage(),
+                  ),
+                );
                 print("Tapped Maps");
               },
             )
@@ -206,6 +224,12 @@ class _UserDashboardState extends State<UserDashboard> {
                     text1: "",
                     text2: "",
                     onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const InvoiceList(),
+                        ),
+                      );
                       print("Tapped Invoices");
                     },
                   ),
@@ -287,7 +311,13 @@ class _UserDashboardState extends State<UserDashboard> {
                     text1: "",
                     text2: "",
                     onTap: () {
-                      print("Tapped Map");
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const MapPage(),
+                        ),
+                      );
+                      print("Tapped Maps");
                     },
                   ),
                 ),
@@ -331,6 +361,12 @@ class _UserDashboardState extends State<UserDashboard> {
                     text1: "",
                     text2: "",
                     onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const InvoiceList(),
+                        ),
+                      );
                       print("Tapped Invoices");
                     },
                   ),
@@ -402,7 +438,13 @@ class _UserDashboardState extends State<UserDashboard> {
                     text1: "",
                     text2: "",
                     onTap: () {
-                      print("Tapped Map");
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const MapPage(),
+                        ),
+                      );
+                      print("Tapped Maps");
                     },
                   ),
                 ),
