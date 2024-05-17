@@ -6,6 +6,7 @@ import 'package:order_processing_app/models/assignment.dart';
 import 'package:order_processing_app/services/assignment_api_service.dart';
 import 'package:order_processing_app/utils/app_colors.dart';
 import 'package:order_processing_app/utils/app_components.dart';
+import 'package:order_processing_app/views/map/map_page.dart';
 
 class AssignmentList extends StatefulWidget {
   const AssignmentList({Key? key}) : super(key: key);
@@ -229,8 +230,6 @@ class _AssignmentListState extends State<AssignmentList> {
         ],
       ),
       body: _buildBody(),
-<<<<<<< Updated upstream
-=======
       floatingActionButton: Padding(
         padding: const EdgeInsets.all(12.0),
         child: FloatingActionButton(
@@ -244,7 +243,6 @@ class _AssignmentListState extends State<AssignmentList> {
           child: const Icon(Icons.map_rounded, color: Colors.white),
         ),
       ),
->>>>>>> Stashed changes
     );
   }
 
