@@ -265,12 +265,12 @@ class _InvoicePageState extends State<InvoicePage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(product.name,
-                    style:
-                        TextStyle(fontSize: 16)), // Product name with styling
+                    style: const TextStyle(
+                        fontSize: 16)), // Product name with styling
                 Container(
                   width: 25, // Define the size of the circle
                   height: 25, // Ensure the container is perfectly circular
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: Colors.blue, // Background color of the circle
                     shape: BoxShape.circle, // Shape of the container
                   ),
@@ -280,7 +280,7 @@ class _InvoicePageState extends State<InvoicePage> {
                         invoiceLogic.removeSelectedProduct(product);
                       });
                     },
-                    icon: Icon(Icons.close,
+                    icon: const Icon(Icons.close,
                         color: Colors.white,
                         size: 10), // Using a different icon
                     tooltip: 'Remove',
@@ -297,13 +297,13 @@ class _InvoicePageState extends State<InvoicePage> {
                 children: [
                   Text(
                     "Price: Rs.${invoiceLogic.getPrice(product, invoiceLogic.selectedPaymentMethod ?? invoiceLogic.paymentMethods.first)} X ${invoiceLogic.productQuantities[product]}",
-                    style: TextStyle(
+                    style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold), // Styling for price
                   ),
                   Text(
                     "Total: Rs.${(invoiceLogic.getPrice(product, invoiceLogic.selectedPaymentMethod ?? invoiceLogic.paymentMethods.first) * (invoiceLogic.productQuantities[product] ?? 1)).toStringAsFixed(2)}",
-                    style: TextStyle(
+                    style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: Colors.blueAccent), // Styling for total
@@ -312,7 +312,7 @@ class _InvoicePageState extends State<InvoicePage> {
               ),
             ),
             _buildQuantityAdjustmentRow(product),
-            Divider(
+            const Divider(
               color: Color(0xFF565656),
             ),
           ],
@@ -329,7 +329,7 @@ class _InvoicePageState extends State<InvoicePage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          Spacer(),
+          const Spacer(),
           IconButton(
             onPressed: () {
               double currentQuantity = double.tryParse(controller.text) ?? 0;
@@ -353,12 +353,12 @@ class _InvoicePageState extends State<InvoicePage> {
             child: TextField(
               controller: controller,
               textAlign: TextAlign.center,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 border: OutlineInputBorder(),
                 isDense: true,
                 contentPadding: EdgeInsets.fromLTRB(0, 0, 10, 0),
               ),
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               keyboardType: TextInputType.number,
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
@@ -435,7 +435,7 @@ class _InvoicePageState extends State<InvoicePage> {
                 const Text("Total Bill",
                     style: TextStyle(fontWeight: FontWeight.bold)),
                 Text("Rs.${totalBillAmount.toStringAsFixed(2)}",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),
             Row(
@@ -444,7 +444,7 @@ class _InvoicePageState extends State<InvoicePage> {
                 const Text("Outstanding Balance",
                     style: TextStyle(fontWeight: FontWeight.bold)),
                 Text('Rs.${invoiceLogic.outstandingBalance.toStringAsFixed(2)}',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),
             Row(
@@ -452,9 +452,9 @@ class _InvoicePageState extends State<InvoicePage> {
               children: [
                 Text(
                     "Discount (${totalBillAmount == 0 ? '0.0' : (discountAmount / totalBillAmount * 100).toStringAsFixed(2)}%)",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
                 Text("Rs.${discountAmount.toStringAsFixed(2)}",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),
             Row(
@@ -501,7 +501,7 @@ class _InvoicePageState extends State<InvoicePage> {
                     }
 
                     return Text(rightSideText,
-                        style: TextStyle(fontWeight: FontWeight.bold));
+                        style: const TextStyle(fontWeight: FontWeight.bold));
                   },
                 )
               ],
@@ -537,13 +537,13 @@ class _InvoicePageState extends State<InvoicePage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      Icon(Icons.add),
-                      SizedBox(width: 4),
-                      Text(
+                      const Icon(Icons.add),
+                      const SizedBox(width: 4),
+                      const Text(
                         'Add payment',
                         style: TextStyle(fontSize: 14),
                       ),
-                      Spacer(),
+                      const Spacer(),
                       CustomAddButton(
                         onPressed: () async {
                           double payableAmount = await invoiceLogic
@@ -673,7 +673,7 @@ class _InvoicePageState extends State<InvoicePage> {
                           strokeColor: Colors.blue,
                           borderRadius: 0,
                         ),
-                        SizedBox(width: 10),
+                        const SizedBox(width: 10),
                         CustomAddButton(
                           onPressed: () async {
                             double payableTotal =
@@ -716,7 +716,7 @@ class _InvoicePageState extends State<InvoicePage> {
                                         .updateSelectedPaymentMethod('Credit');
                                     paymentController.text = 'Credit';
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
+                                      const SnackBar(
                                         content: Text(
                                             'Payment method changed to Credit.'),
                                       ),
@@ -775,7 +775,8 @@ class _InvoicePageState extends State<InvoicePage> {
         if (invoiceLogic.canPrintInvoice()) {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => PrintInvoice(invoiceLogic: invoiceLogic)),
+            MaterialPageRoute(
+                builder: (context) => PrintInvoice(invoiceLogic: invoiceLogic)),
           );
         } else {
           // Show an error alert if the requirements are not met

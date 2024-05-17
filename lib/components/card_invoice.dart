@@ -89,52 +89,43 @@ class InvoiceCard extends StatelessWidget {
                     organizationName,
                     style: GoogleFonts.poppins(
                       color: AppColor.primaryTextColor,
-                      fontSize: 16,
+                      fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Text(
-                        referenceNumber,
-                        style: GoogleFonts.poppins(
-                          color: AppColor.idTextColorDark,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 1,
+                  Text(
+                    referenceNumber,
+                    style: GoogleFonts.poppins(
+                      color: AppColor.idTextColorDark,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: statusColor,
                         ),
+                        borderRadius: BorderRadius.circular(14),
                       ),
-                      const SizedBox(
-                        width: 10,
-                      ),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: AppColor.widgetBackgroundColor,
-                          border: Border.all(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Text(
+                          statusText,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
                             color: statusColor,
-                          ),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Center(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text(
-                                statusText,
-                                textAlign: TextAlign.center,
-                                style: GoogleFonts.poppins(
-                                  color: statusColor,
-                                  fontSize: 10,
-                                  letterSpacing: 1,
-                                ),
-                              ),
-                            ),
+                            fontSize: 8,
+                            letterSpacing: 1,
                           ),
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ],
               ),

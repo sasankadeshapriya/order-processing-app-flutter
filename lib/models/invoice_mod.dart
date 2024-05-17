@@ -11,8 +11,7 @@ class Invoice {
   final String paymentOption;
   final DateTime createdAt;
   final DateTime updatedAt;
-
-  var organizationName;
+  String? organizationName; // Add this field
 
   Invoice({
     required this.id,
@@ -27,6 +26,7 @@ class Invoice {
     required this.paymentOption,
     required this.createdAt,
     required this.updatedAt,
+    this.organizationName, // Initialize it
   });
 
   factory Invoice.fromJson(Map<String, dynamic> json) {
@@ -35,10 +35,10 @@ class Invoice {
       referenceNumber: json['reference_number'],
       clientId: json['client_id'],
       employeeId: json['employee_id'],
-      totalAmount: json['total_amount'].toDouble(),
-      paidAmount: json['paid_amount'].toDouble(),
-      balance: json['balance'].toDouble(),
-      discount: json['discount'].toDouble(),
+      totalAmount: double.parse(json['total_amount']),
+      paidAmount: double.parse(json['paid_amount']),
+      balance: double.parse(json['balance']),
+      discount: double.parse(json['discount']),
       creditPeriodEndDate: DateTime.parse(json['credit_period_end_date']),
       paymentOption: json['payment_option'],
       createdAt: DateTime.parse(json['createdAt']),
