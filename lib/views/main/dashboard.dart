@@ -8,6 +8,8 @@ import 'package:order_processing_app/views/assignment/assignment_list.dart';
 import 'package:order_processing_app/views/invoice/invoice_list_page.dart';
 import 'package:order_processing_app/views/main/drawer.dart';
 import 'package:order_processing_app/views/map/map_page.dart';
+import '../clients/client_form.dart';
+import '../invoice/invoicePage.dart';
 
 class UserDashboard extends StatefulWidget {
   const UserDashboard({super.key});
@@ -133,6 +135,13 @@ class _UserDashboardState extends State<UserDashboard> {
               text2: "",
               onTap: () {
                 print("Tapped Clients");
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ClientForm(),
+                  ),
+                );
+                print("Tapped Invoices");
               },
             ),
             containerRow1(
