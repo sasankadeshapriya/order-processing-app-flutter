@@ -24,7 +24,6 @@ class MapPage extends StatefulWidget {
 
 class _MapPageState extends State<MapPage> {
   late MapBuilder _mapBuilder;
-  late LocationService _locationService;
   final Completer<GoogleMapController> _mapController =
       Completer<GoogleMapController>();
 
@@ -46,16 +45,11 @@ class _MapPageState extends State<MapPage> {
   void initState() {
     super.initState();
     _mapBuilder = MapBuilder();
-    _locationService = LocationService();
-    _locationService.startLocationService(_updateCurrentLocation, context);
     _setCustomMarkerIcon();
     _fetchAssignmentAndClients();
-  }
 
-  @override
-  void dispose() {
-    _locationService.stopLocationService();
-    super.dispose();
+    // Listen for location updates from the GlobalLocationService
+    GlobalLocationService().startLocationService(_updateCurrentLocation);
   }
 
   void _updateCurrentLocation(LatLng location) {
@@ -120,9 +114,8 @@ class _MapPageState extends State<MapPage> {
         FloatingContainer(
           vehicleNumber: _vehicleNumber,
           routeName: _routeName,
-          clientCount: _clientCount, // Pass the count of client locations
-          date: DateFormat('yyyy-MM-dd')
-              .format(DateTime.now()), // Update this as needed
+          clientCount: _clientCount,
+          date: DateFormat('yyyy-MM-dd').format(DateTime.now()),
         ),
       ],
     );
@@ -143,10 +136,7 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<BitmapDescriptor> _loadBitmapDescriptor(String assetName) async {
-    return BitmapDescriptor.fromAssetImage(
-      ImageConfiguration.empty,
-      assetName,
-    );
+    return BitmapDescriptor.fromAssetImage(ImageConfiguration.empty, assetName);
   }
 
   void _setCustomMarkerIcon() async {
@@ -177,7 +167,6 @@ class _MapPageState extends State<MapPage> {
             assignDate.day == today.day) {
           foundAssignmentsForToday = true;
 
-          // Correctly process waypoints assuming it's a list of LatLng objects
           List<LatLng> waypoints = (assignment['waypoints'] as List)
               .map((wp) => LatLng(wp.latitude, wp.longitude))
               .toList();
@@ -202,12 +191,12 @@ class _MapPageState extends State<MapPage> {
           markers.clear();
           setMarkers(start, destination, _routeName);
 
-          int routeId = assignment['route_id']; // Extract the route ID
-          print("Route ID: $routeId"); // Print the route ID for debugging
+          int routeId = assignment['route_id'];
+          print("Route ID: $routeId");
 
-          fetchClientLocations(routeId); // Fetch and display client locations
+          fetchClientLocations(routeId);
 
-          break; // Process only the first matching assignment for simplicity
+          break;
         }
       }
 
@@ -319,28 +308,34 @@ class _MapPageState extends State<MapPage> {
           "Client Locations for Route ID $routeId: ${clientLocations.length} found.");
 
       setState(() {
-        _clientCount =
-            clientLocations.length; // Store the count of client locations
+        _clientCount = clientLocations.length;
 
-        // Add markers for each client location to the map
         for (var location in clientLocations) {
-          double lat = double.parse(location['latitude']);
-          double lng = double.parse(location['longitude']);
-          LatLng position = LatLng(lat, lng);
-          String organization = location['organization_name'];
-          markers.add(Marker(
-            markerId: MarkerId('client_${lat}_$lng'),
-            position: position,
-            icon: BitmapDescriptor.defaultMarker, // Customize as needed
-            infoWindow: InfoWindow(
-              title: organization ?? "Unknown Organization",
-              snippet: 'Client at Route $routeId',
-            ),
-          ));
+          double? lat = double.tryParse(location['latitude']?.toString() ?? '');
+          double? lng =
+              double.tryParse(location['longitude']?.toString() ?? '');
+          String organization =
+              location['organization_name'] ?? 'Unknown Organization';
+
+          if (lat != null && lng != null) {
+            LatLng position = LatLng(lat, lng);
+            markers.add(Marker(
+              markerId: MarkerId('client_${lat}_$lng'),
+              position: position,
+              icon: BitmapDescriptor.defaultMarker,
+              infoWindow: InfoWindow(
+                title: organization,
+                snippet: 'Client at Route $routeId',
+              ),
+            ));
+          } else {
+            AppLogger.logError('Invalid client location data: $location');
+          }
         }
       });
     } catch (e) {
       print('Failed to fetch client locations: $e');
+      AppLogger.logError('Error fetching client locations: $e');
       throw Exception('Error fetching client locations: $e');
     }
   }
