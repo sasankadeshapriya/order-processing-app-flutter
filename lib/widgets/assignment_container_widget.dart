@@ -25,7 +25,7 @@ class FloatingContainer extends StatelessWidget {
           right: 8,
           child: Container(
             width: double.infinity,
-            height: 170,
+            height: 152,
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(14),
@@ -55,7 +55,7 @@ class FloatingContainer extends StatelessWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(Icons.route,
+                      const Icon(Icons.route_outlined,
                           size: 16, color: Color(0xFFA3A2A9)),
                       const SizedBox(width: 8),
                       Text(
@@ -92,32 +92,8 @@ class FloatingContainer extends StatelessWidget {
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      const Icon(Icons.access_time,
+                      const Icon(Icons.people,
                           size: 16, color: Color(0xFFA3A2A9)),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'On Progress',
-                              style: GoogleFonts.poppins(
-                                color: const Color(0xFFA3A2A9),
-                                fontSize: 10,
-                                letterSpacing: 1,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            const LinearProgressIndicator(
-                              value: 0.7, // Example progress value
-                              backgroundColor: Color(0xFFF1F1F1),
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                  Color(0xFFC8B400)),
-                              minHeight: 4,
-                            ),
-                          ],
-                        ),
-                      ),
                       const SizedBox(width: 8),
                       Text(
                         'Client Count: $clientCount', // Example target count
@@ -138,7 +114,7 @@ class FloatingContainer extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        const Icon(Icons.calendar_month,
+                        const Icon(Icons.calendar_today,
                             size: 16, color: Color(0xFFA3A2A9)),
                         const SizedBox(
                           width: 5,

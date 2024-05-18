@@ -59,6 +59,23 @@ class _UserDashboardState extends State<UserDashboard> {
           },
         ),
       ),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: SizedBox(
+          height: maxHeight * 0.08,
+          width: maxHeight * 0.08,
+          child: FloatingActionButton(
+            backgroundColor: AppColor.accentColor,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const InvoicePage()),
+              );
+            },
+            child: const Icon(Icons.receipt_long_outlined, color: Colors.white),
+          ),
+        ),
+      ),
     );
   }
 
@@ -138,7 +155,7 @@ class _UserDashboardState extends State<UserDashboard> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ClientForm(),
+                    builder: (context) => const ClientForm(),
                   ),
                 );
                 print("Tapped Invoices");
