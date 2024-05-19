@@ -101,13 +101,29 @@ class _PrintInvoiceState extends State<PrintInvoice> {
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Print Receipt'),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () {
-              widget.invoiceLogic.resetPaymentStatus();
-              Navigator.of(context).pop();
-            },
+          backgroundColor: AppColor.accentColor,
+          title: const Text(
+            'Print Receipt',
+            style: TextStyle(
+              color: Color(0xFF464949),
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1,
+              fontFamily: 'SF Pro Text',
+            ),
+          ),
+          leading: Padding(
+            padding: const EdgeInsets.only(left: 16),
+            child: IconButton(
+              icon: const Icon(
+                Icons.arrow_back_ios_rounded,
+                color: AppColor.primaryTextColor,
+                size: 15,
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
           ),
         ),
         body: LayoutBuilder(
@@ -439,8 +455,7 @@ class _PrintInvoiceState extends State<PrintInvoice> {
     ));
     list.add(LineText(
       type: LineText.TYPE_TEXT,
-      content:
-          'Invoice No :${widget.invoiceLogic.generateInvoiceNumber()}',
+      content: 'Invoice No :${widget.invoiceLogic.generateInvoiceNumber()}',
       weight: 1,
       align: LineText.ALIGN_LEFT,
       x: 0,

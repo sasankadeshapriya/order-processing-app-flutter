@@ -1,7 +1,9 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
 import 'dart:convert';
+
+import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:order_processing_app/common/location_check_pop.dart';
 import 'package:order_processing_app/common/location_service.dart';
@@ -12,7 +14,6 @@ import 'package:order_processing_app/utils/app_colors.dart';
 import 'package:order_processing_app/utils/app_components.dart';
 import 'package:order_processing_app/utils/logger.dart';
 import 'package:order_processing_app/views/map/loading.dart';
-import 'package:http/http.dart' as http;
 import 'package:order_processing_app/widgets/assignment_container_widget.dart';
 
 class MapPage extends StatefulWidget {
@@ -80,7 +81,7 @@ class _MapPageState extends State<MapPage> {
 
   AppBar _buildAppBar() {
     return AppBar(
-      backgroundColor: const Color(0xFFF1F1F1),
+      backgroundColor: AppColor.accentColor,
       leading: Padding(
         padding: const EdgeInsets.only(left: 16),
         child: IconButton(

@@ -75,7 +75,7 @@ class _InvoiceListState extends State<InvoiceList> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: AppColor.backgroundColor,
+        backgroundColor: AppColor.accentColor,
         leading: Padding(
           padding: const EdgeInsets.only(left: 16),
           child: IconButton(
@@ -129,6 +129,7 @@ class _InvoiceListState extends State<InvoiceList> {
       ),
       body: Column(
         children: [
+          const SizedBox(height: 14),
           _buildStatusHeader(_status),
           const SizedBox(height: 14),
           Expanded(
