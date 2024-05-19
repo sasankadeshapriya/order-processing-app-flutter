@@ -158,7 +158,7 @@ class _AssignmentListState extends State<AssignmentList> {
     return Scaffold(
       backgroundColor: AppColor.backgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColor.backgroundColor,
+        backgroundColor: AppColor.accentColor,
         leading: Padding(
           padding: const EdgeInsets.only(left: 16),
           child: IconButton(
@@ -275,6 +275,7 @@ class _AssignmentListState extends State<AssignmentList> {
   Widget _buildBody() {
     return Column(
       children: [
+        const SizedBox(height: 14),
         _buildStatusHeader(), // Update header based on selected date range
         const SizedBox(height: 14),
         Expanded(

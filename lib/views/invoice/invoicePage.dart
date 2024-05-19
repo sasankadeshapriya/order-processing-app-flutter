@@ -60,8 +60,30 @@ class _InvoicePageState extends State<InvoicePage> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Add New Invoice'),
-          backgroundColor: Colors.lightBlueAccent,
+          leading: Padding(
+            padding: const EdgeInsets.only(left: 16),
+            child: IconButton(
+              icon: const Icon(
+                Icons.arrow_back_ios_rounded,
+                color: AppColor.primaryTextColor,
+                size: 15,
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+          ),
+          title: const Text(
+            'Add New Invoice',
+            style: TextStyle(
+              color: Color(0xFF464949),
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1,
+              fontFamily: 'SF Pro Text',
+            ),
+          ),
+          backgroundColor: AppColor.accentColor,
         ),
         body: LayoutBuilder(
           builder: (context, constraints) {
@@ -75,7 +97,8 @@ class _InvoicePageState extends State<InvoicePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildDateDisplay(),
+                        //_buildDateDisplay(),
+                        const SizedBox(height: 20),
                         _buildClientDropdown(width, 200),
                         const SizedBox(height: 20),
                         _buildPaymentMethodDropdown(width),
@@ -291,7 +314,7 @@ class _InvoicePageState extends State<InvoicePage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "Price: Rs.${invoiceLogic.getPrice(product, invoiceLogic.selectedPaymentMethod ?? invoiceLogic.paymentMethods.first)} X ${invoiceLogic.productQuantities[product]}",
+                    "Price: Rs.${invoiceLogic.getPrice(product, invoiceLogic.selectedPaymentMethod ?? invoiceLogic.paymentMethods.first)} X ${invoiceLogic.productQuantities[product]} ${product.measurementUnit}",
                     style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -366,7 +389,8 @@ class _InvoicePageState extends State<InvoicePage> {
                   isDense: true,
                   contentPadding: EdgeInsets.fromLTRB(0, 0, 10, 0),
                 ),
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 keyboardType: TextInputType.number,
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
@@ -447,7 +471,11 @@ class _InvoicePageState extends State<InvoicePage> {
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(15.0),
-        color: Colors.grey,
+        border: Border.all(
+          color: AppColor.primaryColor, // Choose your desired border color
+          width: 1.0, // Choose the width of the border
+        ),
+        color: AppColor.accentColor.withOpacity(0.3),
       ),
       child: Container(
         width: MediaQuery.of(context).size.width,
@@ -460,18 +488,26 @@ class _InvoicePageState extends State<InvoicePage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text("Total Bill",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColor.primaryColor)),
                 Text("Rs.${totalBillAmount.toStringAsFixed(2)}",
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColor.primaryColor)),
               ],
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text("Outstanding Balance",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColor.primaryColor)),
                 Text('Rs.${invoiceLogic.outstandingBalance.toStringAsFixed(2)}',
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColor.primaryColor)),
               ],
             ),
             Row(
@@ -479,9 +515,13 @@ class _InvoicePageState extends State<InvoicePage> {
               children: [
                 Text(
                     "Discount (${totalBillAmount == 0 ? '0.0' : (discountAmount / totalBillAmount * 100).toStringAsFixed(2)}%)",
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColor.primaryColor)),
                 Text("Rs.${discountAmount.toStringAsFixed(2)}",
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColor.primaryColor)),
               ],
             ),
             Row(
@@ -489,7 +529,9 @@ class _InvoicePageState extends State<InvoicePage> {
               children: [
                 // Always start with "Payable Total" as the initial label
                 const Text("Payable Total",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColor.primaryColor)),
                 FutureBuilder<double>(
                   future: invoiceLogic.getTotalPriceWithDiscount(),
                   builder: (context, snapshot) {
@@ -528,7 +570,9 @@ class _InvoicePageState extends State<InvoicePage> {
                     }
 
                     return Text(rightSideText,
-                        style: const TextStyle(fontWeight: FontWeight.bold));
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppColor.primaryColor));
                   },
                 )
               ],
@@ -621,10 +665,10 @@ class _InvoicePageState extends State<InvoicePage> {
                           }
                         },
                         buttonText: 'Full Paid Now',
-                        backgroundColor: Colors.blueAccent,
+                        backgroundColor: AppColor.accentColor,
                         textColor: Colors.white,
-                        strokeColor: Colors.blue,
-                        borderRadius: 0,
+                        strokeColor: AppColor.accentStrokeColor,
+                        borderRadius: 10,
                       ),
                     ],
                   ),
@@ -704,12 +748,12 @@ class _InvoicePageState extends State<InvoicePage> {
                                 invoiceLogic.selectedClient!.clientId);
                           },
                           buttonText: 'Cancel',
-                          backgroundColor: Colors.blueAccent,
+                          backgroundColor: AppColor.accentColor,
                           textColor: Colors.white,
-                          strokeColor: Colors.blue,
-                          borderRadius: 0,
+                          strokeColor: AppColor.accentStrokeColor,
+                          borderRadius: 10,
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 8),
                         CustomAddButton(
                           onPressed: () async {
                             double payableTotal =
@@ -789,10 +833,10 @@ class _InvoicePageState extends State<InvoicePage> {
                             }
                           },
                           buttonText: 'Add',
-                          backgroundColor: Colors.blueAccent,
+                          backgroundColor: AppColor.accentColor,
                           textColor: Colors.white,
-                          strokeColor: Colors.blue,
-                          borderRadius: 0,
+                          strokeColor: AppColor.accentStrokeColor,
+                          borderRadius: 10,
                         )
                       ],
                     ),

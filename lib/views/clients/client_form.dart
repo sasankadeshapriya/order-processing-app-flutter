@@ -8,6 +8,7 @@ import '../../components/custom_button.dart';
 import '../../components/custom_widget.dart';
 import '../../models/clients_modle.dart';
 import '../../services/client_api_service.dart';
+import '../../utils/app_colors.dart';
 import '../helpers/form_validation.dart';
 import '../main/dashboard.dart';
 import 'client_location.dart';
@@ -66,13 +67,30 @@ class _ClientFormState extends State<ClientForm> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16),
+          child: IconButton(
+            icon: const Icon(
+              Icons.arrow_back_ios_rounded,
+              color: AppColor.primaryTextColor,
+              size: 15,
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
         ),
-        title: const Text('Client Entry Form'),
+        title: const Text(
+          'Client Entry Form',
+          style: TextStyle(
+            color: Color(0xFF464949),
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1,
+            fontFamily: 'SF Pro Text',
+          ),
+        ),
+        backgroundColor: AppColor.accentColor,
       ),
       body: SafeArea(
         child: GestureDetector(
