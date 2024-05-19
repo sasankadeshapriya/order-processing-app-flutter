@@ -1,9 +1,11 @@
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
 import 'package:order_processing_app/models/client.dart';
 import 'package:order_processing_app/models/invoice_mod.dart';
+import 'package:order_processing_app/models/invoice_modle.dart';
 import 'package:order_processing_app/utils/logger.dart';
-import 'package:logger/logger.dart';
 
 class InvoiceService {
   static const String baseUrl = 'https://api.gsutil.xyz';
@@ -71,6 +73,45 @@ class InvoiceService {
     } catch (e) {
       // Handle other errors
       throw Exception('Error: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> postInvoiceData(InvoiceModle invoice) async {
+    const String apiUrl = '$baseUrl/invoice';
+    try {
+      final String requestBody = jsonEncode(invoice.toJson());
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: requestBody,
+      );
+
+      Logger().f('Sending request to $apiUrl');
+      Logger().f('Request body: $requestBody');
+
+      if (response.statusCode == 201) {
+        Logger().i('Invoice successfully created');
+        Logger().i('Response body: ${response.body}');
+        return {'success': true, 'data': jsonDecode(response.body)};
+      } else {
+        Logger()
+            .w('Failed to create invoice. Status code: ${response.statusCode}');
+        Logger().w('Response body: ${response.body}');
+
+        final Map<String, dynamic> responseBody = jsonDecode(response.body);
+        if (responseBody.containsKey('message')) {
+          Logger().w('Error message: ${responseBody['message']}');
+        }
+        return {
+          'success': false,
+          'message': responseBody['message'] ?? 'Failed to create invoice',
+        };
+      }
+    } catch (e) {
+      Logger().e('Exception occurred while sending data: $e');
+      return {'success': false, 'message': 'Exception occurred: $e'};
     }
   }
 }

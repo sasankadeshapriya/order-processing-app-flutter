@@ -1,67 +1,72 @@
 import 'dart:async';
+
+import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:bluetooth_print/bluetooth_print.dart';
 import 'package:bluetooth_print/bluetooth_print_model.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
+
 import '../../components/custom_button.dart';
+import '../../models/print_setting_modle.dart';
+import '../../services/invoice_api_service.dart';
+import '../../services/vehicle_inventory_service.dart';
+import '../../utils/app_colors.dart';
 import '../../utils/invoice_logic.dart';
 import '../../utils/util_functions.dart';
-import '../../models/print_setting_modle.dart';
 
 class PrintInvoice extends StatefulWidget {
   final InvoiceLogic invoiceLogic;
 
-  const PrintInvoice({Key? key, required this.invoiceLogic}) : super(key: key);
+  const PrintInvoice({super.key, required this.invoiceLogic});
 
   @override
   _PrintInvoiceState createState() => _PrintInvoiceState();
 }
 
 class _PrintInvoiceState extends State<PrintInvoice> {
+  final InvoiceLogic invoiceLogic = InvoiceLogic();
+  final InvoiceService invoiceService = InvoiceService();
+  final VehicleInventoryService vehicleInventoryService =
+      VehicleInventoryService();
   BluetoothPrint bluetoothPrint = BluetoothPrint.instance;
-  late String invoiceNumber;
   bool _connected = false;
   BluetoothDevice? _device;
   String tips = 'No device connected';
   String formattedDateTime = '';
-  late printSettings settings; // Ensure settings class name matches your model
-  final Logger logger = Logger();
+  late PrintSettings settings; // Ensure settings class name matches your model
+  bool isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    logger.w('Initializing state.');
+    Logger().w('Initializing state.');
     formattedDateTime = UtilFunctions.getCurrentDateTime();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      logger.w('Post frame callback triggered.');
+      Logger().w('Post frame callback triggered.');
       initBluetooth();
     });
   }
 
   Future<void> initBluetooth() async {
-    logger.w('Fetching settings.');
-    settings = await printSettings.fetchSettings();
-    invoiceNumber = 'INV-${DateTime.now().millisecondsSinceEpoch}';
-    logger.w('Generated invoice number: $invoiceNumber');
+    Logger().w('Fetching settings.');
+    settings = await PrintSettings.fetchSettings();
+    widget.invoiceLogic
+        .generateInvoiceNumber(); // Generate invoice number inside InvoiceLogic
+    Logger().w(
+        'Generated invoice number: ${widget.invoiceLogic.generateInvoiceNumber()}');
 
     bool isEnabled = await bluetoothPrint.isOn;
-    logger.w('Bluetooth enabled status: $isEnabled');
-
     if (!isEnabled) {
-      tips = 'Bluetooth is off. Please turn on Bluetooth and try again.';
-      logger.w(tips);
+      tips = 'Please turn on Bluetooth and try again.';
+      Logger().w(tips);
       setState(() {});
       return;
     }
 
-    logger.w('Starting Bluetooth scan.');
     bluetoothPrint.startScan(timeout: const Duration(seconds: 4));
     bool isConnected = await bluetoothPrint.isConnected ?? false;
 
     bluetoothPrint.state.listen((state) {
-      logger.w('Current device status: $state');
       switch (state) {
         case BluetoothPrint.CONNECTED:
           setState(() {
@@ -90,163 +95,296 @@ class _PrintInvoiceState extends State<PrintInvoice> {
 
   @override
   Widget build(BuildContext context) {
-    logger.w('Building widget.');
+    final deviceWidth = MediaQuery.of(context).size.width;
+
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: Scaffold(
         appBar: AppBar(
           title: const Text('Print Receipt'),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () {
-              logger.w('Navigating back.');
+              widget.invoiceLogic.resetPaymentStatus();
               Navigator.of(context).pop();
             },
           ),
         ),
-        body: RefreshIndicator(
-          onRefresh: () {
-            logger.w('Refreshing and starting scan.');
-            return bluetoothPrint.startScan(
-                timeout: const Duration(seconds: 4));
-          },
-          child: SingleChildScrollView(
-            child: Column(
-              children: <Widget>[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 10, horizontal: 10),
-                      child: Text(tips),
-                    ),
-                  ],
-                ),
-                const Divider(),
-                StreamBuilder<List<BluetoothDevice>>(
-                  stream: bluetoothPrint.scanResults,
-                  initialData: const [],
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.active) {
-                      logger.w('Received Bluetooth scan results.');
-                    }
-                    return Column(
-                      children: snapshot.data!
-                          .map((d) => ListTile(
-                                title: Text(d.name ?? 'Unknown device'),
-                                subtitle: Text(d.address ?? 'Unknown address'),
-                                onTap: () {
-                                  setState(() {
-                                    _device = d;
-                                    logger.w('Device selected: ${d.name}');
-                                  });
-                                },
-                                trailing: _device != null &&
-                                        _device!.address == d.address
-                                    ? const Icon(Icons.check,
-                                        color: Colors.green)
-                                    : null,
-                              ))
-                          .toList(),
-                    );
-                  },
-                ),
-                const Divider(),
-                Container(
-                  padding: const EdgeInsets.fromLTRB(20, 5, 20, 10),
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(8.0),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
                   child: Column(
                     children: <Widget>[
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          OutlinedButton(
-                            onPressed: _connected
-                                ? null
-                                : () async {
-                                    if (_device != null &&
-                                        _device!.address != null) {
-                                      logger.w('Attempting to connect.');
-                                      setState(() {
-                                        tips = 'Connecting...';
-                                      });
-                                      await bluetoothPrint.connect(_device!);
-                                    } else {
-                                      setState(() {
-                                        tips = 'Please select device';
-                                        logger.w(tips);
-                                      });
-                                    }
-                                  },
-                            child: const Text('Connect'),
-                          ),
-                          const SizedBox(width: 10.0),
-                          OutlinedButton(
-                            onPressed: _connected
-                                ? () async {
-                                    logger.w('Disconnecting.');
-                                    setState(() {
-                                      tips = 'Disconnecting...';
-                                    });
-                                    await bluetoothPrint.disconnect();
-                                  }
-                                : null,
-                            child: const Text('Disconnect'),
-                          ),
-                          const SizedBox(width: 10.0),
-                          StreamBuilder<bool>(
-                            stream: bluetoothPrint.isScanning,
-                            initialData: false,
-                            builder: (context, snapshot) {
-                              logger.w('Scanning status: ${snapshot.data}');
-                              if (snapshot.data!) {
-                                return FloatingActionButton(
-                                  onPressed: () {
-                                    logger.w('Stopping scan.');
-                                    bluetoothPrint.stopScan();
-                                  },
-                                  backgroundColor: Colors.red,
-                                  child: const Icon(Icons.stop),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: <Widget>[
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 10, horizontal: 10),
+                                  child: Text(tips),
+                                ),
+                              ],
+                            ),
+                            const Divider(),
+                            StreamBuilder<List<BluetoothDevice>>(
+                              stream: bluetoothPrint.scanResults,
+                              initialData: const [],
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.active) {
+                                  // Logger().w('Received Bluetooth scan results.');
+                                }
+                                return Column(
+                                  children: snapshot.data!
+                                      .map((d) => ListTile(
+                                            title: Text(
+                                                d.name ?? 'Unknown device'),
+                                            subtitle: Text(
+                                                d.address ?? 'Unknown address'),
+                                            onTap: () {
+                                              setState(() {
+                                                _device = d;
+                                                Logger().w(
+                                                    'Device selected: ${d.name}');
+                                              });
+                                            },
+                                            trailing: _device != null &&
+                                                    _device!.address ==
+                                                        d.address
+                                                ? const Icon(Icons.check,
+                                                    color: Colors.green)
+                                                : null,
+                                          ))
+                                      .toList(),
                                 );
-                              } else {
-                                return FloatingActionButton(
-                                  child: const Icon(Icons.search),
-                                  onPressed: () {
-                                    logger.w('Starting scan.');
-                                    bluetoothPrint.startScan(
-                                        timeout: const Duration(seconds: 4));
-                                  },
-                                );
+                              },
+                            ),
+                            const Divider(),
+                            Container(
+                              padding: const EdgeInsets.fromLTRB(5, 5, 5, 5),
+                              child: Column(
+                                children: <Widget>[
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: <Widget>[
+                                      const Spacer(),
+                                      OutlinedButton(
+                                        onPressed: _connected
+                                            ? null
+                                            : () async {
+                                                if (_device != null &&
+                                                    _device!.address != null) {
+                                                  Logger().w(
+                                                      'Attempting to connect.');
+                                                  setState(() {
+                                                    tips = 'Connecting...';
+                                                  });
+                                                  await bluetoothPrint
+                                                      .connect(_device!);
+                                                } else {
+                                                  setState(() {
+                                                    tips =
+                                                        'Please select device';
+                                                    Logger().w(tips);
+                                                  });
+                                                }
+                                              },
+                                        child: const Text('Connect'),
+                                      ),
+                                      const SizedBox(width: 10.0),
+                                      OutlinedButton(
+                                        onPressed: _connected
+                                            ? () async {
+                                                Logger().w('Disconnecting.');
+                                                setState(() {
+                                                  tips = 'Disconnecting...';
+                                                });
+                                                await bluetoothPrint
+                                                    .disconnect();
+                                              }
+                                            : null,
+                                        child: const Text('Disconnect'),
+                                      ),
+                                      const SizedBox(width: 10.0),
+                                      const Spacer(),
+                                      StreamBuilder<bool>(
+                                        stream: bluetoothPrint.isScanning,
+                                        initialData: false,
+                                        builder: (context, snapshot) {
+                                          // Logger().w('Scanning status: ${snapshot.data}');
+                                          if (snapshot.data!) {
+                                            return FloatingActionButton(
+                                              onPressed: () {
+                                                // Logger().w('Stopping scan.');
+                                                bluetoothPrint.stopScan();
+                                              },
+                                              backgroundColor: Colors.red,
+                                              child: const Icon(Icons.stop),
+                                            );
+                                          } else {
+                                            return FloatingActionButton(
+                                              backgroundColor:
+                                                  AppColor.primaryColorLighter,
+                                              onPressed: () {
+                                                Logger().w('Starting scan.');
+                                                bluetoothPrint.startScan(
+                                                    timeout: const Duration(
+                                                        seconds: 4));
+                                              },
+                                              child: const Icon(Icons.search),
+                                            );
+                                          }
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 20),
+                                  SizedBox(
+                                    width: deviceWidth,
+                                    child: SingleChildScrollView(
+                                      scrollDirection: Axis.horizontal,
+                                      child: DataTable(
+                                        columnSpacing:
+                                            28, // Adjust column spacing
+                                        dataRowHeight:
+                                            40, // Adjust row height if needed
+                                        columns: const [
+                                          DataColumn(
+                                              label: Text('Product Name')),
+                                          DataColumn(label: Text('Item Price')),
+                                          DataColumn(label: Text('Qty')),
+                                          DataColumn(label: Text('Total')),
+                                        ],
+                                        rows: widget.invoiceLogic
+                                            .productQuantities.entries
+                                            .map((entry) {
+                                          final product = entry.key;
+                                          final quantity = entry.value;
+                                          final price = widget.invoiceLogic
+                                              .getPrice(
+                                                  product,
+                                                  widget.invoiceLogic
+                                                      .selectedPaymentMethod!);
+                                          final total = price * quantity;
+                                          return DataRow(cells: [
+                                            DataCell(
+                                              Padding(
+                                                padding: const EdgeInsets.all(
+                                                    1.0), // Adjust cell padding
+                                                child: Text(product.name),
+                                              ),
+                                            ),
+                                            DataCell(
+                                              Padding(
+                                                padding: const EdgeInsets.all(
+                                                    2.0), // Adjust cell padding
+                                                child: Text(
+                                                    price.toStringAsFixed(2)),
+                                              ),
+                                            ),
+                                            DataCell(
+                                              Padding(
+                                                padding: const EdgeInsets.all(
+                                                    2.0), // Adjust cell padding
+                                                child:
+                                                    Text(quantity.toString()),
+                                              ),
+                                            ),
+                                            DataCell(
+                                              Padding(
+                                                padding: const EdgeInsets.all(
+                                                    2.0), // Adjust cell padding
+                                                child: Text(
+                                                    total.toStringAsFixed(2)),
+                                              ),
+                                            ),
+                                          ]);
+                                        }).toList(),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Center(
+                        child: CustomButton(
+                          buttonText: 'Print Receipt',
+                          onTap: () async {
+                            setState(() {
+                              // Set isLoading to true when the button is tapped
+                              isLoading = true;
+                            });
+                            // if (_connected) {
+                            try {
+                              await widget.invoiceLogic.processInvoiceData(
+                                vehicleInventoryService,
+                                invoiceService,
+                                context,
+                              );
+                              setState(() {
+                                isLoading = false;
+                              });
+                              //_printReceipt();
+                            } catch (e) {
+                              Logger().e('Error printing receipt: $e');
+                              setState(() {
+                                isLoading = false;
+                              });
+                              if (mounted) {
+                                AwesomeDialog(
+                                  context: context,
+                                  dialogType: DialogType.error,
+                                  headerAnimationLoop: false,
+                                  animType: AnimType.bottomSlide,
+                                  title: 'Print Error',
+                                  desc:
+                                      'An error occurred while printing the receipt. Please try again.',
+                                  buttonsTextStyle:
+                                      const TextStyle(color: Colors.black),
+                                  btnOkOnPress: () {},
+                                ).show();
                               }
-                            },
-                          ),
-                        ],
-                      ),
-                      const Divider(),
-                      CustomButton(
-                        svgIcon: null, // Adjust your button styling as needed
-                        buttonText: 'Print Receipt',
-                        onTap: () async {
-                          if (_connected) {
-                            setState(() {
-                              tips = 'Printing...';
-                              logger.w(tips);
-                            });
-                             await _printReceipt();
-                            setState(() {
-                              tips = 'Print success';
-                              logger.w(tips);
-                            });
-                          }
-                        },
-                        buttonColor:
-                            Colors.blue, // Adjust button color as needed
-                      ),
+                            }
+                            // } else {
+                            //   if (mounted) {
+                            //     AwesomeDialog(
+                            //       context: context,
+                            //       dialogType: DialogType.error,
+                            //       headerAnimationLoop: false,
+                            //       animType: AnimType.bottomSlide,
+                            //       title: 'Connection Error',
+                            //       desc:
+                            //           'No device connected. Please connect a device and try again.',
+                            //       buttonsTextStyle:
+                            //           const TextStyle(color: Colors.black),
+                            //       btnOkOnPress: () {},
+                            //     ).show();
+                            //   }
+                            // }
+                          },
+                          buttonColor: AppColor
+                              .accentColor, // Use your accent color here
+                          isLoading: isLoading,
+                        ),
+                      )
+
+                      //const SizedBox(height: 10),
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -254,7 +392,6 @@ class _PrintInvoiceState extends State<PrintInvoice> {
 
   Future<void> _printReceipt() async {
     Logger().w('Executing print receipt logic.');
-    Logger().w('inside _printReceipt function');
     var selectedClient = widget.invoiceLogic.selectedClient;
     var selectedProduct = widget.invoiceLogic.selectedProduct;
     var quantity = widget.invoiceLogic.productQuantities[selectedProduct];
@@ -264,11 +401,13 @@ class _PrintInvoiceState extends State<PrintInvoice> {
         : ''; // Assuming such a field exists
     var paymentMethod = widget.invoiceLogic.selectedPaymentMethod?.paymentName;
     int selectedProductCount = widget.invoiceLogic.getSelectedProductCount();
+    bool isPartiallyPaid = widget.invoiceLogic.isPartiallyPaid;
+    bool isFullyPaid = widget.invoiceLogic.isFullyPaid;
 
-    Logger().f('$clientName');
+    Logger().f(clientName);
     Logger().f('$selectedProduct');
     Logger().f('$quantity');
-    Logger().f('$employeeName');
+    Logger().f(employeeName);
     Logger().i('$paymentMethod');
 
     Map<String, dynamic> config = {};
@@ -285,121 +424,119 @@ class _PrintInvoiceState extends State<PrintInvoice> {
     ));
 
     list.add(LineText(
-        type: LineText.TYPE_TEXT,
-        content: settings.addressLine01,
-        weight: 1,
-        align: LineText.ALIGN_CENTER,
-        //fontZoom: 2,
-        linefeed: 1));
+      type: LineText.TYPE_TEXT,
+      content: settings.addressLine01,
+      weight: 1,
+      align: LineText.ALIGN_CENTER,
+      linefeed: 1,
+    ));
     list.add(LineText(
-        type: LineText.TYPE_TEXT,
-        content: settings.addressLine02,
-        weight: 1,
-        align: LineText.ALIGN_CENTER,
-        //fontZoom: 2,
-        linefeed: 1));
+      type: LineText.TYPE_TEXT,
+      content: settings.addressLine02,
+      weight: 1,
+      align: LineText.ALIGN_CENTER,
+      linefeed: 1,
+    ));
     list.add(LineText(
-        type: LineText.TYPE_TEXT,
-        content: 'Invoice No :$invoiceNumber',
-        weight: 1,
-        align: LineText.ALIGN_LEFT,
-        x: 0,
-        linefeed: 1));
+      type: LineText.TYPE_TEXT,
+      content:
+          'Invoice No :${widget.invoiceLogic.generateInvoiceNumber()}',
+      weight: 1,
+      align: LineText.ALIGN_LEFT,
+      x: 0,
+      linefeed: 1,
+    ));
     list.add(LineText(
-        type: LineText.TYPE_TEXT,
-        content: 'Client Name: $clientName',
-        weight: 1,
-        align: LineText.ALIGN_LEFT,
-        x: 0,
-        linefeed: 1));
+      type: LineText.TYPE_TEXT,
+      content: 'Client Name: $clientName',
+      weight: 1,
+      align: LineText.ALIGN_LEFT,
+      x: 0,
+      linefeed: 1,
+    ));
     list.add(LineText(
-        type: LineText.TYPE_TEXT,
-        content: 'Ref Name   : $employeeName',
-        weight: 1,
-        align: LineText.ALIGN_LEFT,
-        x: 0,
-        linefeed: 1));
+      type: LineText.TYPE_TEXT,
+      content: 'Ref Name   : $employeeName',
+      weight: 1,
+      align: LineText.ALIGN_LEFT,
+      x: 0,
+      linefeed: 1,
+    ));
     list.add(LineText(
-        type: LineText.TYPE_TEXT,
-        content: 'Payment    : $paymentMethod',
-        weight: 1,
-        align: LineText.ALIGN_LEFT,
-        x: 0,
-        linefeed: 1));
+      type: LineText.TYPE_TEXT,
+      content: 'Payment    : $paymentMethod',
+      weight: 1,
+      align: LineText.ALIGN_LEFT,
+      x: 0,
+      linefeed: 1,
+    ));
     list.add(LineText(
-        type: LineText.TYPE_TEXT,
-        content: 'Date/Time  : $formattedDateTime',
-        weight: 1,
-        align: LineText.ALIGN_LEFT,
-        x: 0,
-        relativeX: 0,
-        linefeed: 1));
+      type: LineText.TYPE_TEXT,
+      content: 'Date/Time  : $formattedDateTime',
+      weight: 1,
+      align: LineText.ALIGN_LEFT,
+      x: 0,
+      relativeX: 0,
+      linefeed: 1,
+    ));
     list.add(LineText(
-        type: LineText.TYPE_TEXT,
-        content: '_______________________________',
-        weight: 1,
-        align: LineText.ALIGN_LEFT,
-        x: 0,
-        linefeed: 1));
+      type: LineText.TYPE_TEXT,
+      content: '_______________________________',
+      weight: 1,
+      align: LineText.ALIGN_LEFT,
+      x: 0,
+      linefeed: 1,
+    ));
 
     list.add(LineText(
-        type: LineText.TYPE_TEXT,
-        content: 'Item',
-        weight: 1,
-        align: LineText.ALIGN_LEFT,
-        x: 0,
-        relativeX: 0,
-        linefeed: 0));
+      type: LineText.TYPE_TEXT,
+      content: 'Item',
+      weight: 1,
+      align: LineText.ALIGN_LEFT,
+      x: 0,
+      relativeX: 0,
+      linefeed: 0,
+    ));
 
     list.add(LineText(
-        type: LineText.TYPE_TEXT,
-        content: 'Price',
-        weight: 1,
-        align: LineText.ALIGN_LEFT,
-        x: 80,
-        relativeX: 0,
-        linefeed: 0));
+      type: LineText.TYPE_TEXT,
+      content: 'Price',
+      weight: 1,
+      align: LineText.ALIGN_LEFT,
+      x: 80,
+      relativeX: 0,
+      linefeed: 0,
+    ));
 
     list.add(LineText(
-        type: LineText.TYPE_TEXT,
-        content: 'Qty',
-        weight: 1,
-        align: LineText.ALIGN_LEFT,
-        x: 190,
-        relativeX: 0,
-        linefeed: 0));
+      type: LineText.TYPE_TEXT,
+      content: 'Qty',
+      weight: 1,
+      align: LineText.ALIGN_LEFT,
+      x: 190,
+      relativeX: 0,
+      linefeed: 0,
+    ));
 
     list.add(LineText(
-        type: LineText.TYPE_TEXT,
-        content: 'Amount',
-        weight: 1,
-        align: LineText.ALIGN_LEFT,
-        x: 310,
-        relativeX: 0,
-        linefeed: 0));
+      type: LineText.TYPE_TEXT,
+      content: 'Amount',
+      weight: 1,
+      align: LineText.ALIGN_LEFT,
+      x: 310,
+      relativeX: 0,
+      linefeed: 0,
+    ));
 
     list.add(LineText(
-        type: LineText.TYPE_TEXT,
-        content: '-------------------------------',
-        weight: 1,
-        align: LineText.ALIGN_LEFT,
-        relativeX: 0,
-        linefeed: 0));
+      type: LineText.TYPE_TEXT,
+      content: '-------------------------------',
+      weight: 1,
+      align: LineText.ALIGN_LEFT,
+      relativeX: 0,
+      linefeed: 0,
+    ));
 
-    // Fallback to first if none selected
-    var productDetails = widget.invoiceLogic.getFormattedProductDetails();
-
-    for (var detail in productDetails) {
-      // Add each line to print buffer
-      list.add(LineText(
-        type: LineText.TYPE_TEXT,
-        content:
-            "${detail['title']} ${detail['price']} x${detail['quantity']} = ${detail['amount']}",
-        weight: 1,
-        align: LineText.ALIGN_LEFT,
-        linefeed: 1,
-      ));
-    }
     widget.invoiceLogic.productQuantities.forEach((product, quantity) {
       final String title = product.name;
       final double price = widget.invoiceLogic
@@ -413,7 +550,6 @@ class _PrintInvoiceState extends State<PrintInvoice> {
       final int spacesNeeded = maxWidth - (AmountStart + amountLength);
       final String AmountWithSpace = ' ' * spacesNeeded + amountString;
 
-      // Adjust title to fit within the maximum width
       String adjustedTitle;
       if (title.length > maxWidth) {
         final spacesNeeded = title.length - maxWidth;
@@ -422,7 +558,6 @@ class _PrintInvoiceState extends State<PrintInvoice> {
         adjustedTitle = title.padRight(maxWidth);
       }
 
-      // Add LineText for title
       list.add(LineText(
         type: LineText.TYPE_TEXT,
         content: adjustedTitle,
@@ -433,7 +568,6 @@ class _PrintInvoiceState extends State<PrintInvoice> {
         linefeed: 0,
       ));
 
-      // Add LineText for price
       final String priceString = 'Rs.$price';
       list.add(LineText(
         type: LineText.TYPE_TEXT,
@@ -455,7 +589,6 @@ class _PrintInvoiceState extends State<PrintInvoice> {
         linefeed: 0,
       ));
 
-      // Add LineText for amount aligned to the maximum right corner
       list.add(LineText(
         type: LineText.TYPE_TEXT,
         content: AmountWithSpace,
@@ -468,12 +601,13 @@ class _PrintInvoiceState extends State<PrintInvoice> {
     });
 
     list.add(LineText(
-        type: LineText.TYPE_TEXT,
-        content: '_______________________________',
-        weight: 1,
-        align: LineText.ALIGN_LEFT,
-        x: 0,
-        linefeed: 1));
+      type: LineText.TYPE_TEXT,
+      content: '_______________________________',
+      weight: 1,
+      align: LineText.ALIGN_LEFT,
+      x: 0,
+      linefeed: 1,
+    ));
 
     list.add(LineText(
       type: LineText.TYPE_TEXT,
@@ -481,7 +615,7 @@ class _PrintInvoiceState extends State<PrintInvoice> {
       weight: 1,
       align: LineText.ALIGN_LEFT,
       relativeX: 0,
-      linefeed: 1, // Move to the next line after printing amount
+      linefeed: 1,
     ));
 
     final labelsAndValues = [
@@ -499,19 +633,17 @@ class _PrintInvoiceState extends State<PrintInvoice> {
       },
       {
         'label': 'Payable Total:',
-        'value': widget.invoiceLogic.paidAmount.toStringAsFixed(2)
+        'value': isPartiallyPaid
+            ? '0.00'
+            : widget.invoiceLogic.paidAmount.toStringAsFixed(2)
       },
     ];
 
-    // Add LineText elements
     for (final item in labelsAndValues) {
       final label = item['label'];
       final value = item['value'];
 
-      // Calculate the spaces needed for alignment
       final spacesNeeded = maxWidth - label!.length - value!.length;
-
-      // Create the line with proper alignment
       final line = '$label${' ' * spacesNeeded}$value';
 
       list.add(LineText(
@@ -524,38 +656,36 @@ class _PrintInvoiceState extends State<PrintInvoice> {
     }
 
     list.add(LineText(
-        type: LineText.TYPE_TEXT,
-        content: '_______________________________',
-        weight: 1,
-        align: LineText.ALIGN_LEFT,
-        x: 0,
-        linefeed: 1));
+      type: LineText.TYPE_TEXT,
+      content: '_______________________________',
+      weight: 1,
+      align: LineText.ALIGN_LEFT,
+      x: 0,
+      linefeed: 1,
+    ));
     list.add(LineText(
       type: LineText.TYPE_TEXT,
       content: settings.softwareCompany,
       weight: 1,
       align: LineText.ALIGN_CENTER,
-      //x: 0,
       relativeX: 0,
-      linefeed: 1, // Move to the next line after printing amount
+      linefeed: 1,
     ));
     list.add(LineText(
       type: LineText.TYPE_TEXT,
       content: settings.companyPhoneNumber,
       weight: 1,
       align: LineText.ALIGN_CENTER,
-      //x: 0,
       relativeX: 0,
-      linefeed: 1, // Move to the next line after printing amount
+      linefeed: 1,
     ));
     list.add(LineText(
       type: LineText.TYPE_TEXT,
       content: ' ',
       weight: 1,
       align: LineText.ALIGN_CENTER,
-      //x: 0,
       relativeX: 0,
-      linefeed: 1, // Move to the next line after printing amount
+      linefeed: 1,
     ));
     await bluetoothPrint.printReceipt(config, list);
   }

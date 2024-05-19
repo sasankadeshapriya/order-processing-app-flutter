@@ -8,7 +8,7 @@ import 'package:order_processing_app/utils/app_components.dart';
 import 'package:order_processing_app/views/invoice/invoicePage.dart';
 
 class InvoiceList extends StatefulWidget {
-  const InvoiceList({Key? key}) : super(key: key);
+  const InvoiceList({super.key});
 
   @override
   _InvoiceListState createState() => _InvoiceListState();

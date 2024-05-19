@@ -5,13 +5,13 @@ import 'package:order_processing_app/utils/app_components.dart';
 
 class CustomButton extends StatefulWidget {
   const CustomButton({
-    Key? key,
+    super.key,
     this.svgIcon,
     required this.buttonText,
     required this.onTap,
     this.buttonColor = AppColor.accentColor,
     this.isLoading = false,
-  }) : super(key: key);
+  });
 
   final String? svgIcon;
   final String buttonText;

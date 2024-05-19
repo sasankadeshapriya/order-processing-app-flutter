@@ -1,26 +1,24 @@
-import 'dart:ffi';
-
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:expansion_tile_card/expansion_tile_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
-import 'package:pinput/pinput.dart';
+
 import '../../components/alert_dialog.dart';
 import '../../components/custom_button.dart';
 import '../../components/custom_widget.dart';
 import '../../models/clients_modle.dart';
 import '../../models/payments_modle.dart';
 import '../../models/product_modle.dart';
+import '../../utils/app_colors.dart';
 import '../../utils/invoice_logic.dart';
 import 'print_invoice.dart';
 
 class InvoicePage extends StatefulWidget {
   const InvoicePage({
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   _InvoicePageState createState() => _InvoicePageState();
@@ -41,21 +39,15 @@ class _InvoicePageState extends State<InvoicePage> {
   @override
   void initState() {
     super.initState();
-    // initializeData();
-    //invoiceLogic.fetchProductDetails();
-    //invoiceLogic.fetchClients();
     fetchProductsAndUpdateUI();
   }
 
   Future<void> fetchProductsAndUpdateUI() async {
     await invoiceLogic.fetchClients();
     // Assuming empId and currentDate are correctly set
-    var products = await invoiceLogic.fetchProductDetails(1, '2024-04-01');
-    setState(() {
-      invoiceLogic.productList = products; // Ensure productList is updated here
-      Logger().f(
-          'Products loaded into dropdown: ${invoiceLogic.productList.length}');
-    });
+    await invoiceLogic.fetchProductDetails(1, '2024-04-01', context);
+    Logger()
+        .f('Products loaded into dropdown: ${invoiceLogic.productList.length}');
   }
 
   @override
@@ -84,7 +76,7 @@ class _InvoicePageState extends State<InvoicePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildDateDisplay(),
-                        _buildClientDropdown(width),
+                        _buildClientDropdown(width, 200),
                         const SizedBox(height: 20),
                         _buildPaymentMethodDropdown(width),
                         const SizedBox(height: 20),
@@ -126,10 +118,11 @@ class _InvoicePageState extends State<InvoicePage> {
     );
   }
 
-  Widget _buildClientDropdown(double width) {
+  Widget _buildClientDropdown(double width, double height) {
     return DropdownMenu<Client>(
       controller: clientController,
       width: width,
+      menuHeight: height,
       hintText: "Select Client",
       requestFocusOnTap: true,
       enableFilter: true,
@@ -271,7 +264,9 @@ class _InvoicePageState extends State<InvoicePage> {
                   width: 25, // Define the size of the circle
                   height: 25, // Ensure the container is perfectly circular
                   decoration: const BoxDecoration(
-                    color: Colors.blue, // Background color of the circle
+                    color:
+                        AppColor.primaryColor, // Background color of the circle
+
                     shape: BoxShape.circle, // Shape of the container
                   ),
                   child: IconButton(
@@ -299,14 +294,17 @@ class _InvoicePageState extends State<InvoicePage> {
                     "Price: Rs.${invoiceLogic.getPrice(product, invoiceLogic.selectedPaymentMethod ?? invoiceLogic.paymentMethods.first)} X ${invoiceLogic.productQuantities[product]}",
                     style: const TextStyle(
                         fontSize: 14,
-                        fontWeight: FontWeight.bold), // Styling for price
+                        fontWeight: FontWeight.bold,
+                        color: AppColor
+                            .secondaryTextColorDark), // Styling for price
                   ),
                   Text(
                     "Total: Rs.${(invoiceLogic.getPrice(product, invoiceLogic.selectedPaymentMethod ?? invoiceLogic.paymentMethods.first) * (invoiceLogic.productQuantities[product] ?? 1)).toStringAsFixed(2)}",
                     style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: Colors.blueAccent), // Styling for total
+                        color: AppColor
+                            .secondaryTextColorDark), // Styling for total
                   ),
                 ],
               ),
@@ -326,89 +324,118 @@ class _InvoicePageState extends State<InvoicePage> {
         invoiceLogic.getControllerForProduct(product);
 
     return Container(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          const Spacer(),
-          IconButton(
-            onPressed: () {
-              double currentQuantity = double.tryParse(controller.text) ?? 0;
-              if (currentQuantity > 0.5) {
-                currentQuantity -= 1;
-                controller.text = currentQuantity.toStringAsFixed(
-                    currentQuantity.truncateToDouble() == currentQuantity
-                        ? 0
-                        : 1);
-                invoiceLogic.updateProductQuantity(product, currentQuantity);
-                setState(() {});
-              }
-            },
-            icon: const Icon(Icons.remove_circle_outline,
-                color: Colors.redAccent),
-            tooltip: 'Decrease',
-          ),
-          SizedBox(
-            width: 50,
-            height: 25,
-            child: TextField(
-              controller: controller,
-              textAlign: TextAlign.center,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                isDense: true,
-                contentPadding: EdgeInsets.fromLTRB(0, 0, 10, 0),
-              ),
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-              ],
-              onChanged: (newValue) {
-                // Allow partial decimal input to be entered by users
-                if (newValue.isEmpty) {
-                  newValue = '0';
-                }
-                double? quantity = double.tryParse(newValue);
-                if (quantity != null && quantity <= product.quantity) {
-                  invoiceLogic.updateProductQuantity(product, quantity);
+      child: Align(
+        alignment: Alignment.centerRight, // Align to the right
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            IconButton(
+              onPressed: () {
+                double currentQuantity = double.tryParse(controller.text) ?? 0;
+                if (currentQuantity > 0.5) {
+                  currentQuantity -= 1;
+                  controller.text = currentQuantity.toStringAsFixed(
+                      currentQuantity.truncateToDouble() == currentQuantity
+                          ? 0
+                          : 1);
+                  invoiceLogic.updateProductQuantity(product, currentQuantity);
+
                   setState(() {});
-                } else if (quantity != null && quantity > product.quantity) {
-                  // Reset to max available if entered quantity exceeds available stock
+                } else {
+                  // Show alert when trying to decrease below 0.5
+                  AleartBox.showAleart(
+                    context,
+                    DialogType.warning,
+                    'Minimum Quantity Reached',
+                    'The minimum quantity allowed is 0.1',
+                  );
+                }
+              },
+              icon: const Icon(Icons.remove_circle_outline,
+                  color: Colors.redAccent),
+              tooltip: 'Decrease',
+            ),
+            SizedBox(
+              width: 50,
+              height: 25,
+              child: TextField(
+                controller: controller,
+                textAlign: TextAlign.center,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                  contentPadding: EdgeInsets.fromLTRB(0, 0, 10, 0),
+                ),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                ],
+                onChanged: (newValue) {
+                  // Add a leading zero if the input starts with a decimal point
+                  if (newValue.startsWith('.')) {
+                    newValue = '0$newValue';
+                  }
+
+                  // Validate input against available stock
+                  double? quantity = double.tryParse(newValue);
+                  if (quantity != null) {
+                    if (quantity > product.quantity) {
+                      // If entered quantity exceeds available stock, set it to maximum available
+                      controller.text = product.quantity.toStringAsFixed(
+                        product.quantity.truncateToDouble() == product.quantity
+                            ? 0
+                            : 1,
+                      );
+                      // Show alert for insufficient stock
+                      AleartBox.showAleart(
+                        context,
+                        DialogType.warning,
+                        'Insufficient Stock',
+                        'The entered quantity exceeds the available stock (${product.quantity})',
+                      );
+                    } else {
+                      // Update quantity if within available stock
+                      invoiceLogic.updateProductQuantity(product, quantity);
+                      setState(() {});
+                    }
+                  }
+                },
+              ),
+            ),
+            IconButton(
+              onPressed: () {
+                double currentQuantity = double.tryParse(controller.text) ?? 0;
+                double increment = 1;
+                double newQuantity = currentQuantity + increment;
+                if (newQuantity <= product.quantity) {
+                  // Only update the text field and quantity if the new quantity is within the available quantity
+                  controller.text = newQuantity.toStringAsFixed(
+                      newQuantity.truncateToDouble() == newQuantity ? 0 : 1);
+                  invoiceLogic.updateProductQuantity(product, newQuantity);
+                  setState(() {});
+                } else {
+                  // Show alert when trying to increase beyond available stock
                   controller.text = product.quantity.toStringAsFixed(
                       product.quantity.truncateToDouble() == product.quantity
                           ? 0
                           : 1);
                   invoiceLogic.updateProductQuantity(product, product.quantity);
                   setState(() {});
+
+                  AleartBox.showAleart(
+                    context,
+                    DialogType.warning,
+                    'Maximum Quantity Reached',
+                    'The maximum quantity allowed is ${product.quantity}.',
+                  );
                 }
               },
+              icon: const Icon(Icons.add_circle_outline, color: Colors.green),
+              tooltip: 'Increase',
             ),
-          ),
-          IconButton(
-            onPressed: () {
-              double currentQuantity = double.tryParse(controller.text) ?? 0;
-              double increment = 1;
-              double newQuantity = currentQuantity + increment;
-              if (newQuantity <= product.quantity) {
-                // Only update the text field and quantity if the new quantity is within the available quantity
-                controller.text = newQuantity.toStringAsFixed(
-                    newQuantity.truncateToDouble() == newQuantity ? 0 : 1);
-                invoiceLogic.updateProductQuantity(product, newQuantity);
-                setState(() {});
-              } else {
-                // If new quantity exceeds available quantity, set text field value to available quantity
-                controller.text = product.quantity.toStringAsFixed(
-                    product.quantity.truncateToDouble() == product.quantity
-                        ? 0
-                        : 1);
-                invoiceLogic.updateProductQuantity(product, product.quantity);
-                setState(() {});
-              }
-            },
-            icon: const Icon(Icons.add_circle_outline, color: Colors.green),
-            tooltip: 'Increase',
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -473,14 +500,14 @@ class _InvoicePageState extends State<InvoicePage> {
                       rightSideText =
                           "Calculating..."; // Show while data is loading
                     } else if (snapshot.hasError) {
-                      Logger()
-                          .e("Error fetching total price: ${snapshot.error}");
+                      // Logger()
+                      //     .e("Error fetching total price: ${snapshot.error}");
                       rightSideText =
                           "Error: ${snapshot.error}"; // Display errors distinctly
                     } else {
                       double totalDue =
                           snapshot.data ?? 0.0; // Fetched total amount due
-                      Logger().d("Fetched Total Due: $totalDue");
+                      // Logger().d("Fetched Total Due: $totalDue");
 
                       // Determine the right side text based on the payment status
                       if (invoiceLogic.isFullyPaid) {
@@ -491,12 +518,12 @@ class _InvoicePageState extends State<InvoicePage> {
                       } else if (invoiceLogic.isPartiallyPaid) {
                         rightSideText =
                             "Rs.0.00"; // Display '0.0' for partially paid invoices
-                        Logger().d("Invoice partially paid, displaying '0.0'");
+                        //Logger().d("Invoice partially paid, displaying '0.0'");
                       } else {
                         rightSideText =
                             "Rs.${totalDue.toStringAsFixed(2)}"; // Otherwise, show the total due
-                        Logger().d(
-                            "Invoice not fully or partially paid, showing Total Due: $totalDue");
+                        // Logger().d(
+                        //     "Invoice not fully or partially paid, showing Total Due: $totalDue");
                       }
                     }
 
@@ -546,42 +573,51 @@ class _InvoicePageState extends State<InvoicePage> {
                       const Spacer(),
                       CustomAddButton(
                         onPressed: () async {
-                          double payableAmount = await invoiceLogic
-                              .getTotalPriceWithDiscount(); // Get the total amount that needs to be paid.
-                          String selectedPaymentMethod =
-                              invoiceLogic.selectedPaymentMethod?.paymentName ??
-                                  '';
-
-                          // Log the payment method selected for debugging.
-                          Logger().d(
-                              "Payment Method Selected: $selectedPaymentMethod");
-
-                          if (selectedPaymentMethod != 'Cash' &&
-                              selectedPaymentMethod != 'Cheque') {
-                            // Alert the user if the payment method is not acceptable for a full payment.
+                          // Check if all required conditions are met before proceeding
+                          if (invoiceLogic.selectedClient == null ||
+                              invoiceLogic.selectedPaymentMethod == null ||
+                              invoiceLogic.productQuantities.isEmpty) {
                             AleartBox.showAleart(
                               context,
-                              DialogType.error,
-                              'Error',
-                              'Full payment cannot be made using credit.',
+                              DialogType.warning,
+                              'Unable to Full Paid Invoice',
+                              'You must select a client, a payment method, and at least one product before adding payment.',
                             );
                           } else {
-                            // Set the invoice as fully paid, update the paid amount and reset the outstanding balance.
-                            setState(() {
-                              invoiceLogic.isFullyPaid = true;
-                              invoiceLogic.paidAmount = payableAmount;
-                              invoiceLogic.outstandingBalance = 0.0;
-                              Logger().f(
-                                  "Invoice marked as fully paid. Total price: $payableAmount, Fully Paid Amount: ${invoiceLogic.paidAmount}, Outstanding Balance: ${invoiceLogic.outstandingBalance}");
-                            });
+                            double payableAmount =
+                                await invoiceLogic.getTotalPriceWithDiscount();
+                            String selectedPaymentMethod = invoiceLogic
+                                    .selectedPaymentMethod?.paymentName ??
+                                '';
 
-                            // Show a success alert.
-                            AleartBox.showAleart(
-                              context,
-                              DialogType.success,
-                              'Success',
-                              'Invoice fully paid successfully.',
-                            );
+                            Logger().d(
+                                "Payment Method Selected: $selectedPaymentMethod");
+
+                            if (selectedPaymentMethod != 'Cash' &&
+                                selectedPaymentMethod != 'Cheque') {
+                              AleartBox.showAleart(
+                                context,
+                                DialogType.error,
+                                'Error',
+                                'Full payment cannot be made using credit.',
+                              );
+                            } else {
+                              setState(() {
+                                invoiceLogic.isFullyPaid = true;
+                                invoiceLogic.paidAmount = payableAmount;
+                                invoiceLogic.outstandingBalance = 0.0;
+                                Logger().f(
+                                  "Invoice marked as fully paid. Total price: $payableAmount, Fully Paid Amount: ${invoiceLogic.paidAmount}, Outstanding Balance: ${invoiceLogic.outstandingBalance}",
+                                );
+                              });
+
+                              AleartBox.showAleart(
+                                context,
+                                DialogType.success,
+                                'Success',
+                                'Invoice marked as fully paid.',
+                              );
+                            }
                           }
                         },
                         buttonText: 'Full Paid Now',
@@ -695,7 +731,8 @@ class _InvoicePageState extends State<InvoicePage> {
                               Logger().d('Entered Amount: $paymentAmount');
 
                               if (paymentController.text == 'Cash' ||
-                                  paymentController.text == 'Cheque') {
+                                  paymentController.text == 'Cheque' ||
+                                  paymentController.text == 'Credit') {
                                 // Proceed to adjust the payment
                                 double newBalance =
                                     payableTotal - paymentAmount;
@@ -710,7 +747,8 @@ class _InvoicePageState extends State<InvoicePage> {
                                   invoiceLogic.isPartiallyPaid =
                                       isPartiallyPaid;
 
-                                  if (isPartiallyPaid) {
+                                  if (isPartiallyPaid &&
+                                      paymentController.text != 'Credit') {
                                     // If the invoice is partially paid and the method was Cash or Cheque, change to Credit
                                     invoiceLogic
                                         .updateSelectedPaymentMethod('Credit');
@@ -734,7 +772,7 @@ class _InvoicePageState extends State<InvoicePage> {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                        'Amount of \$${paymentAmount.toStringAsFixed(2)} added successfully! New balance: \$${newBalance.toStringAsFixed(2)}'),
+                                        'Amount of Rs.${paymentAmount.toStringAsFixed(2)} added successfully! New balance: Rs.${newBalance.toStringAsFixed(2)}'),
                                   ),
                                 );
                               } else {
@@ -771,8 +809,9 @@ class _InvoicePageState extends State<InvoicePage> {
   Widget _buildPrintInvoiceButton() {
     return CustomButton(
       buttonText: 'Print Invoice',
-      onTap: () {
-        if (invoiceLogic.canPrintInvoice()) {
+      onTap: () async {
+        bool canPrint = invoiceLogic.canPrintInvoice();
+        if (canPrint) {
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -784,13 +823,13 @@ class _InvoicePageState extends State<InvoicePage> {
             context,
             DialogType.error,
             'Incomplete Information',
-            'You must select a client, a payment method, and at least one product before you can print the invoice.',
+            invoiceLogic.invoiceErrorMessage,
           );
         }
       },
       buttonColor: invoiceLogic.canPrintInvoice()
-          ? Colors.blue
-          : Colors.grey, // Enable or disable the button visually
+          ? AppColor.accentColor
+          : AppColor.disableBtnColor, // Enable or disable the button visually
       isLoading: false,
     );
   }

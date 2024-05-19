@@ -1,10 +1,11 @@
 import 'dart:async';
+
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:logger/logger.dart';
-import '../../components/alert_dialog.dart';
+
 import '../../components/custom_button.dart';
 
 class MapSample extends StatefulWidget {
@@ -91,9 +92,9 @@ class MapSampleState extends State<MapSample> {
                   padding: const EdgeInsets.only(
                       bottom: 15.0, left: 5.0, right: 5.0, top: 10.0),
                   child: CustomButton(
-                    buttonText: 'Select Client  Location',
+                    buttonText: 'Select Client Location',
                     isLoading: _isTapped,
-                    onTap: _getCurrentLocation,
+                    onTap: _getCurrentLocationAndNavigateBack,
                   ),
                 ),
               ),
@@ -163,29 +164,23 @@ class MapSampleState extends State<MapSample> {
         LocationData locationData = await _location.getLocation();
         _currentPosition =
             LatLng(locationData.latitude!, locationData.longitude!);
-        _isLoadingLocation = false;
-        await showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('Success'),
-              content: Text('Location added successfully.'),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(); // Close the dialog
-                    Navigator.pop(context, {
-                      'latitude': _currentPosition!.latitude,
-                      'longitude': _currentPosition!.longitude
-                    });
-                  },
-                  child: Text('OK'),
-                ),
-              ],
-            );
-          },
-        );
       }
+      _isLoadingLocation = false;
+
+      // Show the success dialog using AwesomeDialog
+      AwesomeDialog(
+        context: context,
+        dialogType: DialogType.success,
+        animType: AnimType.bottomSlide,
+        title: 'Success',
+        desc: 'Location added successfully.',
+        btnOkOnPress: () {
+          Navigator.pop(context, {
+            'latitude': _currentPosition!.latitude,
+            'longitude': _currentPosition!.longitude,
+          });
+        },
+      ).show();
     } catch (e) {
       print('Error getting current location: $e');
       setState(() {

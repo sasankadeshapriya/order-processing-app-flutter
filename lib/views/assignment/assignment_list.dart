@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/web.dart';
 import 'package:order_processing_app/components/card_assignment.dart';
@@ -10,7 +9,7 @@ import 'package:order_processing_app/utils/app_components.dart';
 import 'package:order_processing_app/views/map/map_page.dart';
 
 class AssignmentList extends StatefulWidget {
-  const AssignmentList({Key? key}) : super(key: key);
+  const AssignmentList({super.key});
 
   @override
   State<AssignmentList> createState() => _AssignmentListState();

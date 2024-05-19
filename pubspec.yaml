@@ -36,12 +36,12 @@ dependencies:
   cupertino_icons: ^1.0.2
   flutter_svg: ^2.0.10+1
   logger: ^2.0.2+1
-  pinput: ^2.2.21
+  pinput: ^4.0.0
   http: ^1.2.0
   shared_preferences: ^2.2.2
   jumping_dot: ^0.0.6
   google_fonts: ^6.2.1
-  awesome_dialog: ^3.2.0
+  awesome_dialog: ^3.2.1
   google_maps_flutter: ^2.6.1
   intl: ^0.19.0
   app_settings: ^5.1.1
@@ -64,7 +64,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^2.0.0
+  flutter_lints: ^4.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

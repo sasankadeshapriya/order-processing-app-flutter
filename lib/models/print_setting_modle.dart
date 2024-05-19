@@ -1,11 +1,11 @@
-class printSettings {
+class PrintSettings {
   String organizationName;
   String addressLine01;
   String addressLine02;
   String softwareCompany;
   String companyPhoneNumber;
 
-  printSettings({
+  PrintSettings({
     required this.organizationName,
     required this.addressLine01,
     required this.addressLine02,
@@ -14,9 +14,9 @@ class printSettings {
   });
 
   // Example method to fetch settings from a local source or API
-  static Future<printSettings> fetchSettings() async {
+  static Future<PrintSettings> fetchSettings() async {
     // This is a placeholder for fetching data, replace with actual data fetch
-    return printSettings(
+    return PrintSettings(
       organizationName: 'Genius Soft Pvt Ltd',
       addressLine01: '274 2/1, High level road',
       addressLine02: 'Maharagama',

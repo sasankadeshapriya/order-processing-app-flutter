@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -10,7 +8,7 @@ import 'package:order_processing_app/utils/util_functions.dart';
 import 'package:order_processing_app/views/auth/login.dart';
 
 class AppDrawer extends StatefulWidget {
-  const AppDrawer({Key? key}) : super(key: key);
+  const AppDrawer({super.key});
 
   @override
   _AppDrawerState createState() => _AppDrawerState();

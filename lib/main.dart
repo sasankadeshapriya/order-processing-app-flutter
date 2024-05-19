@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:order_processing_app/common/location_service.dart';
-import 'package:order_processing_app/components/card_invoice.dart';
 import 'package:order_processing_app/utils/app_colors.dart';
-import 'package:order_processing_app/views/assignment/assignment_list.dart';
-import 'package:order_processing_app/views/invoice/invoice_list_page.dart';
 import 'package:order_processing_app/views/main/dashboard.dart';
-import 'package:order_processing_app/views/map/map_page.dart';
-import 'package:order_processing_app/views/splash/splashscreen.dart';
+
+import 'common/location_service.dart';
 
 void main() {
   runApp(const MyApp());
@@ -41,6 +37,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: ThemeData(
         scaffoldBackgroundColor: AppColor.backgroundColor,

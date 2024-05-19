@@ -9,11 +9,11 @@ class AssignmentCard extends StatelessWidget {
   final String vehicleNumber;
 
   const AssignmentCard({
-    Key? key,
+    super.key,
     required this.date,
     required this.routeName,
     required this.vehicleNumber,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

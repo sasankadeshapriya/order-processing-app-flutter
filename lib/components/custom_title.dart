@@ -4,13 +4,13 @@ import 'package:order_processing_app/utils/app_components.dart';
 
 class CustomTitle extends StatelessWidget {
   const CustomTitle({
-    Key? key,
+    super.key,
     required this.text,
     this.textAlign = TextAlign.left,
     this.fontSize = 22,
     this.fontWeight,
     this.color = AppColor.primaryTextColor,
-  }) : super(key: key);
+  });
 
   final String text;
   final TextAlign textAlign;

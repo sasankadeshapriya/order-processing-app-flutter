@@ -5,14 +5,14 @@ import 'package:order_processing_app/utils/app_colors.dart';
 
 class InvoiceCard extends StatelessWidget {
   const InvoiceCard({
-    Key? key,
+    super.key,
     required this.organizationName,
     required this.createdAt,
     required this.creditPeriodEndDate,
     required this.paidAmount,
     required this.totalAmount,
     required this.referenceNumber,
-  }) : super(key: key);
+  });
 
   final String organizationName;
   final String createdAt;

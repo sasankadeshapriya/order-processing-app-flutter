@@ -1,15 +1,15 @@
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:logger/logger.dart';
+
 import '../../components/alert_dialog.dart';
 import '../../components/custom_button.dart';
 import '../../components/custom_widget.dart';
 import '../../models/clients_modle.dart';
 import '../../services/client_api_service.dart';
-import '../../services/token_manager.dart';
 import '../helpers/form_validation.dart';
+import '../main/dashboard.dart';
 import 'client_location.dart';
 import 'image_handller.dart';
 
@@ -24,15 +24,15 @@ class ClientForm extends StatefulWidget {
 
 class _ClientFormState extends State<ClientForm> {
   final ClientService clientService = ClientService();
-  TextEditingController _nicController = TextEditingController();
-  TextEditingController _locationController = TextEditingController();
-  TextEditingController _logoController =
+  final TextEditingController _nicController = TextEditingController();
+  final TextEditingController _locationController = TextEditingController();
+  final TextEditingController _logoController =
       TextEditingController(); // Add controller for logo field
   bool _showAdditionalNicField = false; // Track additional field for NIC
   bool _showAdditionalLogoField = false; // Track additional field for logo
   late bool _isExpanded = false;
   final _formKey = GlobalKey<FormState>();
-  bool _isLoading = false; // Add a loading state
+  bool isLoading = false; // Add a loading state
 
   String? _organizationName;
   String? _nicFrontImagePath;
@@ -52,12 +52,6 @@ class _ClientFormState extends State<ClientForm> {
     super.initState();
 
     // Initialize logo controller
-  }
-
-  void setLoading(bool isLoading) {
-    setState(() {
-      _isLoading = isLoading;
-    });
   }
 
   @override
@@ -125,9 +119,8 @@ class _ClientFormState extends State<ClientForm> {
 
                               // Check if the locationResult is not null and then update latitude and longitude
                               if (locationResult != null) {
-                                double? _latitude = locationResult['latitude'];
-                                double? _longitude =
-                                    locationResult['longitude'];
+                                _latitude = locationResult['latitude'];
+                                _longitude = locationResult['longitude'];
 
                                 // Update the text field to show these values
                                 _locationController.text =
@@ -320,10 +313,13 @@ class _ClientFormState extends State<ClientForm> {
                   child: CustomButton(
                     buttonText: 'Add This Client',
                     onTap: () {
-                      if (!_isLoading) {
-                        _handleAddClient();
-                      }
+                      setState(() {
+                        isLoading = true;
+                      });
+                      _handleAddClient();
                     },
+                    isLoading: isLoading,
+
                     // Other code...
                   ),
                 ),
@@ -351,7 +347,8 @@ class _ClientFormState extends State<ClientForm> {
   }
 
   void createNewClient() async {
-    setLoading(true);
+    isLoading = true;
+
     Client newClient = Client(
       organizationName: _organizationName!,
       name: _clientName!,
@@ -369,15 +366,24 @@ class _ClientFormState extends State<ClientForm> {
     // Now send this data to your server
     clientService.postClientData(newClient);
     var result = await clientService.postClientData(newClient);
-    setLoading(false); // Turn off loading indicator after the request
+    await Future.delayed(Duration(seconds: 1));
+    isLoading = false; // Turn off loading indicator after the request
 
     if (result['success']) {
-      AleartBox.showAleart(
-        context, 
-        DialogType.success, // Corrected type for success
-        'Success', // Changed title to Success
-        'Client successfully created' // Change the message to a success notification
-      );
+      AwesomeDialog(
+        context: context,
+        dialogType: DialogType.success, // Changed to DialogType.SUCCES
+        animType: AnimType.bottomSlide,
+        title: 'Success', // Changed title to Success
+        desc:
+            'Client successfully created', // Changed message to a success notification
+        btnOkText: 'OK',
+        btnOkOnPress: () {
+          // Navigate to dashboard after clicking OK
+          Navigator.push(context,
+              MaterialPageRoute(builder: (context) => const UserDashboard()));
+        },
+      )..show();
     } else {
       AleartBox.showAleart(
         context,

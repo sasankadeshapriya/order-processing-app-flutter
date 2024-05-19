@@ -1,12 +1,22 @@
+import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
+
+import '../components/alert_dialog.dart';
 import '../models/clients_modle.dart';
+import '../models/invoice_modle.dart'; // Import Invoice and InvoiceProduct
 import '../models/payments_modle.dart';
+import '../models/processed_product.dart'; // Import the existing ProcessedProduct model
 import '../models/product_modle.dart';
+import '../models/product_response.dart';
+import '../models/vehicle_inventory_modle.dart';
 import '../services/client_api_service.dart';
 import '../services/invoice_api_service.dart';
 import '../services/product_api_service.dart';
+import '../services/vehicle_inventory_service.dart';
+import '../views/main/dashboard.dart';
+import 'util_functions.dart';
 
 class InvoiceLogic {
   late List<Client> clients;
@@ -18,17 +28,17 @@ class InvoiceLogic {
   Client? selectedClient;
   late String _token;
   late int? empId = 1; // change after debug
-  // Payment section
+  String employeeName = '';
+  String invoiceErrorMessage = '';
   double? _outstandingBalance = 0.0;
   double? totalPrice = 0.0;
   bool isFullyPaid = false;
-  bool isPartiallyPaid = false; 
+  bool isPartiallyPaid = false;
   double paidAmount = 0.0;
   double totalPaybleAmount = 0.0;
   final Map<int, TextEditingController> _quantityControllers = {};
   double get outstandingBalance => _outstandingBalance ?? 0.0;
 
-  // Constructor
   InvoiceLogic() {
     clients = [];
     productList = [];
@@ -41,178 +51,115 @@ class InvoiceLogic {
 
   void updateSelectedPaymentMethod(String paymentMethodName) {
     selectedPaymentMethod = paymentMethods.firstWhere(
-        (paymentMethod) => paymentMethod.paymentName == paymentMethodName,
-        orElse: () => selectedPaymentMethod as PaymentMethod);
+      (paymentMethod) => paymentMethod.paymentName == paymentMethodName,
+      orElse: () => selectedPaymentMethod as PaymentMethod,
+    );
   }
 
   set outstandingBalance(double value) {
     _outstandingBalance = value;
   }
+
   bool canPrintInvoice() {
-  // Check if client, payment method, and at least one product have been selected
-  return selectedClient != null &&
-         selectedPaymentMethod != null &&
-         productQuantities.isNotEmpty;
-}
- List<Map<String, dynamic>> getFormattedProductDetails() {
-    List<Map<String, dynamic>> productDetails = [];
-    
-    productQuantities.forEach((product, quantity) {
+    if (selectedClient == null ||
+        selectedPaymentMethod == null ||
+        productQuantities.isEmpty) {
+      invoiceErrorMessage =
+          'You must select a client, a payment method, and at least one product before you can print the invoice.';
+      return false;
+    } else if (!isFullyPaid && !isPartiallyPaid) {
+      invoiceErrorMessage =
+          'You must add a payment before you can print the invoice.';
+      return false;
+    }
+    invoiceErrorMessage = '';
+    return true;
+  }
+
+  List<Map<String, dynamic>> getFormattedProductDetails() {
+    return productQuantities.entries.map((entry) {
+      final product = entry.key;
+      final quantity = entry.value;
       final double price = getPrice(product, selectedPaymentMethod!);
       final double amount = price * quantity;
-      productDetails.add({
+      return {
         'title': product.name,
         'price': price.toStringAsFixed(2),
         'quantity': quantity,
         'amount': amount.toStringAsFixed(2),
-      });
-    });
-
-    return productDetails;
+      };
+    }).toList();
   }
 
-
   void disposeControllers() {
-    _quantityControllers.forEach((_, controller) => controller.dispose());
+    for (var controller in _quantityControllers.values) {
+      controller.dispose();
+    }
     _quantityControllers.clear();
   }
 
   TextEditingController getControllerForProduct(Product product) {
-    int key = product.id; // Use int ID directly
-    if (!_quantityControllers.containsKey(key)) {
-      _quantityControllers[key] = TextEditingController(
-          text: '${productQuantities[product]?.toStringAsFixed(1) ?? '0.0'}');
-    }
-    return _quantityControllers[key]!;
+    return _quantityControllers.putIfAbsent(
+      product.id,
+      () => TextEditingController(
+        text: productQuantities[product]?.toStringAsFixed(1) ?? '0.0',
+      ),
+    );
   }
 
   Future<void> getOutstandingBalance(int clientId) async {
     try {
-      double _Balance = await InvoiceService.getClientBalance(clientId);
-      _outstandingBalance = _Balance;
+      _outstandingBalance = await InvoiceService.getClientBalance(clientId);
       Logger().i('Outstanding balance updated: $_outstandingBalance');
     } catch (e) {
       Logger().e('Error fetching client balance: $e');
-      _outstandingBalance = 0; // Reset on error
+      _outstandingBalance = 0;
     }
   }
 
   Future<void> fetchClients() async {
     try {
-      List<dynamic> clientData = await ClientService.fetchClients();
-      clients =
-          clientData.map((clientJson) => Client.fromJson(clientJson)).toList();
-      clients.forEach((client) {
-       // Logger().i(client); // Using info level logging to log client details
-      });
+      final clientData = await ClientService.fetchClients();
+      clients = clientData.map((json) => Client.fromJson(json)).toList();
     } catch (error) {
       Logger().e('Error fetching clients: $error');
     }
   }
 
-  Future<List<Product>> fetchProductDetails(
-      int empId, String currentDate) async {
-    //Logger().d("Fetching products with empId: $empId (Type: ${empId.runtimeType}) on date: $currentDate (Type: ${currentDate.runtimeType})");
-
+  Future<void> fetchProductDetails(
+      int empId, String currentDate, BuildContext context) async {
     try {
-      Map<String, dynamic> productData =
+      ProductResponse productResponse =
           await ProductService.fetchProducts(empId, currentDate);
-      // Logger().d("Product data received: ${productData.runtimeType}");
-
-      if (productData.isEmpty ||
-          productData['products'] == null ||
-          productData['products'].isEmpty) {
-        // Logger().w('No products found in the data for empId: $empId on date: $currentDate');
-        return []; // Return an empty list
-      }
-
-      List<dynamic> products = productData['products'];
-      // Logger().d(
-      //     "Received products data: ${products.length} items of type ${products.runtimeType}");
-
-      return products
-          .map((productJson) {
-            try {
-              Map<String, dynamic> json = productJson as Map<String, dynamic>;
-              // Logger().d("Processing product JSON: $json (Type: ${json.runtimeType})");
-
-              double cashPrice =
-                  double.tryParse(json['cashPrice'].toString()) ?? 0.0;
-              // Logger().d("Parsed cashPrice: $cashPrice (Type: ${cashPrice.runtimeType})");
-              double checkPrice =
-                  double.tryParse(json['checkPrice'].toString()) ?? 0.0;
-              // Logger().d("Parsed checkPrice: $checkPrice (Type: ${checkPrice.runtimeType})");
-              double creditPrice =
-                  double.tryParse(json['creditPrice'].toString()) ?? 0.0;
-              //Logger().d("Parsed creditPrice: $creditPrice (Type: ${creditPrice.runtimeType})");
-              double quantity =
-                  double.tryParse(json['quantity'].toString()) ?? 0.0;
-              //Logger().d("Parsed quantity: $quantity (Type: ${quantity.runtimeType})");
-
-              Product product = Product(
-                employeeName: json['employeeName'],
-                id: json['id'],
-                name: json['name'],
-                sku: json['sku'],
-                productCode: json['productCode'],
-                measurementUnit: json['measurementUnit'],
-                description: json['description'],
-                productImage: json['productImage'],
-                cashPrice: cashPrice,
-                checkPrice: checkPrice,
-                creditPrice: creditPrice,
-                assignmentId: json['assignmentId'],
-                quantity: quantity,
-              );
-
-              // Logger().d("Created product instance: $product (Type: ${product.runtimeType})");
-              return product;
-            } catch (e) {
-              Logger().e(
-                'Error processing product JSON: $e',
-              );
-              return null; // This will be filtered out
-            }
-          })
-          .where((product) => product != null)
-          .cast<Product>()
-          .toList();
+      productList = productResponse.products;
+      employeeName = productResponse.employeeName;
+      // Now you can use productList and employeeName in your logic
     } catch (error) {
-      Logger().e('Error fetching product details:$error');
-      return []; // Return an empty list on error
+      Logger().e('Error fetching product details: $error');
+      // Show Awesome Dialog with error message
+      AwesomeDialog(
+        context: context,
+        dialogType: DialogType.error,
+        title: 'Failed to fetch products',
+        desc: 'Error: $error',
+        btnOkOnPress: () {},
+      ).show();
     }
   }
 
   String generateInvoiceNumber() {
-    // Get the current date and time
-    DateTime now = DateTime.now();
-    // Format the date and time components
-    String formattedDateTime = DateFormat('yyyyMMddHHmmss').format(now);
-    // Combine the components to form the invoice number
-    String invoiceNumber = 'INV-${empId ?? 'UNKNOWN'}-$formattedDateTime';
-    return invoiceNumber;
+    final now = DateTime.now();
+    final formattedDateTime = DateFormat('yyyyMMddHHmmss').format(now);
+    return 'INV-${empId ?? 'UNKNOWN'}-$formattedDateTime';
   }
 
-  // Future<void> retrieveEmpId() async {
-  // final String? token = await TokenManager.getToken();
-  // if (token != null) {
-  //   try {
-  //     Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
-  //     empId = decodedToken['userId'] as int?;
-  //   } catch (e) {
-  //     print('Error decoding token: $e');
-  //   }
-  // }
-//}
+  void resetPaymentStatus() {
+    isFullyPaid = false;
+    isPartiallyPaid = false;
+  }
 
   int getSelectedProductCount() {
-    int count = 0;
-    productQuantities.forEach((product, quantity) {
-      if (quantity > 0) {
-        count++;
-      }
-    });
-    return count;
+    return productQuantities.values.where((quantity) => quantity > 0).length;
   }
 
   void selectPaymentMethod(PaymentMethod? paymentMethod) {
@@ -220,24 +167,17 @@ class InvoiceLogic {
   }
 
   void increaseQuantity(Product product) {
-    productQuantities[product] = (productQuantities[product] ?? 1) + 1;
+    productQuantities[product] = (productQuantities[product] ?? 0) + 1;
   }
 
   void decreaseQuantity(Product product, {double decrement = 1.0}) {
-    double currentQuantity = productQuantities[product] ?? 1.0;
-    if (currentQuantity > decrement) {
-      productQuantities[product] = currentQuantity - decrement;
-    } else {
-      productQuantities[product] = 0.0; // Optional: prevent negative quantities
-    }
+    final currentQuantity = productQuantities[product] ?? 0.0;
+    productQuantities[product] =
+        currentQuantity > decrement ? currentQuantity - decrement : 0.0;
   }
 
   void updateProductQuantity(Product product, double newQuantity) {
-    // Check if the product exists in the productQuantities map
-    if (productQuantities.containsKey(product)) {
-      // Update the quantity of the product
-      productQuantities[product] = newQuantity;
-    }
+    productQuantities[product] = newQuantity;
   }
 
   void addSelectedProduct(Product product) {
@@ -264,74 +204,222 @@ class InvoiceLogic {
   }
 
   double getTotalBillAmount() {
-    double total = 0.0;
-    productQuantities.forEach((product, quantity) {
-      double price = getPrice(product, selectedPaymentMethod!) * quantity;
-
-      total += price;
+    return productQuantities.entries.fold(0.0, (total, entry) {
+      final product = entry.key;
+      final quantity = entry.value;
+      final price = getPrice(product, selectedPaymentMethod!);
+      return total + (price * quantity);
     });
-    Logger().i("Total bill amount calculated: $total");
-    return total;
   }
 
   double getDiscountAmount() {
     if (selectedClient != null && selectedClient!.discount > 0) {
-      double totalBill = getTotalBillAmount();
-      double discount = totalBill * (selectedClient!.discount / 100);
-      Logger().i(
-          "Total bill for discount: $totalBill, Discount Rate: ${selectedClient!.discount}%, Discount Amount: $discount");
-      return discount;
+      final totalBill = getTotalBillAmount();
+      return totalBill * (selectedClient!.discount / 100);
     }
     return 0.0;
   }
 
   Future<double> getTotalPriceWithDiscount() async {
-    if (selectedClient == null) {
-      Logger()
-          .w('No selected client when calculating total price with discount.');
-      double totalBill = getTotalBillAmount();
-      double discount = getDiscountAmount();
-      Logger().i(
-          "Returning without a selected client: Total Bill - Discount = $totalBill - $discount");
-      return totalBill - discount;
-    }
-
-    try {
-      double totalBillAmount = getTotalBillAmount();
-      double discountAmount = getDiscountAmount();
-      double totalPrice =
-          totalBillAmount - discountAmount + (this.outstandingBalance ?? 0.0);
-      Logger().i(
-          "Total Price with Discount Calculated: Total Bill - Discount + Outstanding Balance = $totalBillAmount - $discountAmount + ${this.outstandingBalance ?? 0.0} = $totalPrice");
-      return totalPrice;
-    } catch (e) {
-      Logger().w('Error calculating total price with discount: $e');
-      double totalBill = getTotalBillAmount();
-      double discount = getDiscountAmount();
-      Logger().i("Error case: Total Bill - Discount = $totalBill - $discount");
-      return totalBill - discount;
-    }
+    final totalBill = getTotalBillAmount();
+    final discount = getDiscountAmount();
+    return totalBill - discount + (outstandingBalance);
   }
 
   Future<void> calculateTotalPaybleAmount() async {
     totalPaybleAmount = await getTotalPriceWithDiscount();
-    // Use totalPaybleAmount as needed
-    print('Total Payble Amount: $totalPaybleAmount');
+    Logger().i('Total Payable Amount: $totalPaybleAmount');
   }
 
   void updateTotalPaybleAmount(double newTotalPaybleAmount) {
-  totalPaybleAmount = newTotalPaybleAmount;
-  Logger().i('Total Payable Amount updated: $totalPaybleAmount');
-}
-
-
-  // Function to load invoice page inside a container
+    totalPaybleAmount = newTotalPaybleAmount;
+    Logger().i('Total Payable Amount updated: $totalPaybleAmount');
+  }
 
   Future<void> printProductList() async {
     Logger().d("Printing product list with ${productList.length} items.");
-    for (Product product in productList) {
-      Logger().d(
-          'Product ID: ${product.id}, Name: ${product.name}, Price: ${product.cashPrice}, Price: ${product.checkPrice},Price: ${product.creditPrice}, Sku :${product.sku},Product Code :${product.productCode},Product Image: ${product.productImage},MeasurementUnit : ${product.measurementUnit},Assignment Id: ${product.assignmentId},Qauntity :${product.quantity}');
-    } //
+    for (final product in productList) {
+      Logger().d('Product: ${product.toJson()}');
+    }
+  }
+
+  Future<void> processInvoiceData(
+    VehicleInventoryService vehicleInventoryService,
+    InvoiceService invoiceService,
+    BuildContext context,
+  ) async {
+    final processedProducts = processProducts();
+
+    await updateVehicleInventory(
+        processedProducts, vehicleInventoryService, context);
+    await postInvoiceData(processedProducts, invoiceService, context);
+  }
+
+  List<ProcessedProduct> processProducts() {
+    return productQuantities.entries.map((entry) {
+      final product = entry.key;
+      final quantity = entry.value;
+      final price = getPrice(product, selectedPaymentMethod!);
+      return ProcessedProduct(
+        product: product,
+        quantity: quantity,
+        price: price,
+        sum: price * quantity,
+      );
+    }).toList();
+  }
+
+  Future<void> updateVehicleInventory(
+    List<ProcessedProduct> processedProducts,
+    VehicleInventoryService vehicleInventoryService,
+    BuildContext context,
+  ) async {
+    // Function to validate and parse quantity input
+    double parseQuantity(String input) {
+      // Add a leading zero if the input starts with a decimal point
+      if (input.startsWith('.')) {
+        input = '0$input';
+      }
+
+      // Try to parse the input as a double
+      try {
+        return double.parse(input);
+      } catch (e) {
+        Logger().e('Invalid quantity input: $input');
+        return 0.0;
+      }
+    }
+
+    // Flag to track if any product update was successful
+    bool updateSuccessful = false;
+
+    for (final processedProduct in processedProducts) {
+      // Validate and parse the quantity input
+      final inputQuantity = processedProduct.quantity;
+      final validQuantity = parseQuantity(inputQuantity.toString());
+
+      // Use the quantity from the Product class to get the current available stock
+      final currentAvailableStock = processedProduct.product.quantity;
+
+      // Calculate new available stock
+      final newAvailableStock = currentAvailableStock - validQuantity;
+      if (newAvailableStock < 0) {
+        Logger().e(
+            'Not enough stock for product ID: ${processedProduct.product.id}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Not enough stock for product ID: ${processedProduct.product.id}'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        continue;
+      }
+
+      // Update vehicle inventory with new available stock
+      final vehicleInventory = VehicleInventory(
+        quantity: newAvailableStock,
+        sku: processedProduct.product.sku,
+        productId: processedProduct.product.id,
+        addedByAdminId: empId!,
+        assignmentId: processedProduct.product.assignmentId,
+      );
+
+      // Send updated inventory to the database
+      final success = await vehicleInventoryService.updateVehicleInventory(
+        processedProduct.product.vehicleInventoryId,
+        vehicleInventory,
+      );
+
+      if (success) {
+        updateSuccessful = true; // Set flag to true if update is successful
+        Logger().i(
+            'Vehicle inventory updated for product ID: ${processedProduct.product.id}');
+      } else {
+        Logger().e(
+            'Failed to update vehicle inventory for product ID: ${processedProduct.product.id}');
+      }
+    }
+
+    // Show a single SnackBar after updating all products
+    if (updateSuccessful) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vehicle inventory updated successfully'),
+          duration: Duration(seconds: 2), // Adjust the duration as needed
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to update vehicle inventory for some products'),
+          duration: Duration(seconds: 2), // Adjust the duration as needed
+        ),
+      );
+    }
+  }
+
+  Future<void> postInvoiceData(
+    List<ProcessedProduct> processedProducts,
+    InvoiceService invoiceService,
+    BuildContext context,
+  ) async {
+    try {
+      final totalAmount = await getTotalPriceWithDiscount();
+
+      final invoiceProducts = processedProducts.map((processedProduct) {
+        return InvoiceProduct(
+          productId: processedProduct.product.id,
+          batchId: int.tryParse(processedProduct.product.sku) ?? 0,
+          quantity: processedProduct.quantity,
+          sum: processedProduct.sum,
+        );
+      }).toList();
+
+      final invoice = InvoiceModle(
+        referenceNumber: generateInvoiceNumber(),
+        clientId: selectedClient!.clientId,
+        employeeId: empId!,
+        totalAmount: totalAmount,
+        paidAmount: paidAmount,
+        balance: outstandingBalance,
+        discount: getDiscountAmount(),
+        creditPeriodEndDate: UtilFunctions.getCurrentDateTime(),
+        paymentOption: selectedPaymentMethod!.paymentName.toLowerCase(),
+        products: invoiceProducts,
+      );
+
+      Logger().w('Posting invoice data...');
+
+      final postResult = await invoiceService.postInvoiceData(invoice);
+
+      Logger().w('Invoice data post result: $postResult');
+
+      if (postResult['success']) {
+        AwesomeDialog(
+          context: context,
+          dialogType: DialogType.success,
+          headerAnimationLoop: false,
+          animType: AnimType.bottomSlide,
+          title: 'Success',
+          desc: 'Invoice data has been successfully saved.',
+          btnOkOnPress: () {
+            Navigator.push(context,
+                MaterialPageRoute(builder: (context) => const UserDashboard()));
+          },
+          // Customize the OK button text if needed
+          btnOkText: 'OK',
+          // Customize the OK button's text color if needed
+          btnOkColor: Colors.green,
+        ).show();
+      } else {
+        AleartBox.showAleart(context, DialogType.error, 'Error',
+            postResult['message'] ?? 'Unknown error occurred.');
+      }
+    } catch (e) {
+      Logger().e('Error posting invoice data: $e');
+      AleartBox.showAleart(context, DialogType.error, 'Error',
+          'An error occurred while posting invoice data: $e');
+    }
   }
 }

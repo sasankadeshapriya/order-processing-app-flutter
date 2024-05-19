@@ -4,7 +4,7 @@ import 'package:jumping_dot/jumping_dot.dart';
 import 'package:order_processing_app/utils/app_components.dart';
 
 class Loading extends StatelessWidget {
-  const Loading({Key? key}) : super(key: key);
+  const Loading({super.key});
 
   @override
   Widget build(BuildContext context) {

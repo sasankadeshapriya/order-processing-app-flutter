@@ -4,13 +4,13 @@ import 'package:order_processing_app/utils/app_components.dart';
 
 class CustomText extends StatelessWidget {
   const CustomText({
-    Key? key,
+    super.key,
     required this.text,
     this.textAlign = TextAlign.left,
     this.fontSize = 12,
     this.fontWeight,
     this.color = AppColor.paragraphTextColor,
-  }) : super(key: key);
+  });
 
   final String text;
   final TextAlign textAlign;

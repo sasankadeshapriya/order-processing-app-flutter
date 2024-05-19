@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class FloatingContainer extends StatelessWidget {
   final String vehicleNumber;
@@ -8,12 +7,12 @@ class FloatingContainer extends StatelessWidget {
   final int clientCount;
 
   const FloatingContainer({
-    Key? key,
+    super.key,
     required this.vehicleNumber,
     required this.routeName,
     required this.date,
     required this.clientCount,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

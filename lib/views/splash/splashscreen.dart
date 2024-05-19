@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:jumping_dot/jumping_dot.dart';
-import 'package:logger/logger.dart';
 import 'package:order_processing_app/services/token_manager.dart';
 import 'package:order_processing_app/utils/app_colors.dart';
 import 'package:order_processing_app/utils/util_functions.dart';
