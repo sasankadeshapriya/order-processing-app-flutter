@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:order_processing_app/components/card_invoice.dart';
-import 'package:order_processing_app/models/client.dart';
 import 'package:order_processing_app/models/invoice_mod.dart';
 import 'package:order_processing_app/services/invoice_api_service.dart';
 import 'package:order_processing_app/utils/app_colors.dart';
 import 'package:order_processing_app/utils/app_components.dart';
 import 'package:order_processing_app/views/invoice/invoicePage.dart';
+
+import '../../models/clients_modle.dart';
 
 class InvoiceList extends StatefulWidget {
   const InvoiceList({super.key});
@@ -39,8 +40,12 @@ class _InvoiceListState extends State<InvoiceList> {
     }
   }
 
-  Future<String> _getClientOrganizationName(int clientId) async {
+  Future<String> _getClientOrganizationName(int? clientId) async {
     try {
+      if (clientId == null) {
+        throw Exception('Client ID is null');
+      }
+
       Client client = await InvoiceService.getClientById(clientId);
       String organizationName =
           client.organizationName ?? 'Client details not found';

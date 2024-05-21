@@ -119,8 +119,8 @@ class InvoiceLogic {
 
   Future<void> fetchClients() async {
     try {
-      final clientData = await ClientService.fetchClients();
-      clients = clientData.map((json) => Client.fromJson(json)).toList();
+      final clientData = await ClientService.getClients();
+      clients = clientData;
     } catch (error) {
       Logger().e('Error fetching clients: $error');
     }

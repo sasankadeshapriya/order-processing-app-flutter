@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:order_processing_app/models/route.dart';
@@ -94,7 +95,7 @@ class AssignmentApiService {
     try {
       String locationJsonString = jsonEncode(locationData);
 
-      AppLogger.logDebug('Received location data: $locationData');
+      //AppLogger.logDebug('Received location data: $locationData');
 
       final response = await http.put(
         Uri.parse('$empbaseUrl/$employeeId/update/location'),
@@ -105,7 +106,7 @@ class AssignmentApiService {
       );
 
       if (response.statusCode == 200) {
-        AppLogger.logDebug('Employee location updated successfully');
+        // AppLogger.logDebug('Employee location updated successfully');
       } else {
         AppLogger.logError(
             'Failed to update employee location: ${response.statusCode}');

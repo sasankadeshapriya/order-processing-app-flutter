@@ -2,10 +2,11 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
-import 'package:order_processing_app/models/client.dart';
 import 'package:order_processing_app/models/invoice_mod.dart';
 import 'package:order_processing_app/models/invoice_modle.dart';
 import 'package:order_processing_app/utils/logger.dart';
+
+import '../models/clients_modle.dart';
 
 class InvoiceService {
   static const String baseUrl = 'https://api.gsutil.xyz';
@@ -16,7 +17,7 @@ class InvoiceService {
       final response = await http.get(Uri.parse('$baseUrl/invoice'));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body)['invoices'];
-        AppLogger.logInfo('Data received: $data');
+        Logger().f('Data received: $data');
         return data.map((json) => Invoice.fromJson(json)).toList();
       } else {
         AppLogger.logError('Failed to load invoices: ${response.statusCode}');

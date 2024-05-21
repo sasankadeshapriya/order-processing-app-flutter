@@ -1,3 +1,4 @@
+import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,7 +8,9 @@ import 'package:order_processing_app/views/assignment/assignment_list.dart';
 import 'package:order_processing_app/views/main/drawer.dart';
 import 'package:order_processing_app/views/map/map_page.dart';
 
+import '../../components/alert_dialog.dart';
 import '../clients/client_form.dart';
+import '../inventory/product_list.dart';
 import '../invoice/invoicePage.dart';
 import '../invoice/invoice_list_page.dart';
 
@@ -116,6 +119,12 @@ class _UserDashboardState extends State<UserDashboard> {
               text2: "",
               onTap: () {
                 print("Tapped Repoerts");
+                AleartBox.showAleart(
+                  context,
+                  DialogType.info,
+                  'Under development',
+                  'This section Under development. Sorry for the inconvenience.',
+                );
               },
             ),
             containerRow1(
@@ -142,6 +151,12 @@ class _UserDashboardState extends State<UserDashboard> {
               text2: "",
               onTap: () {
                 print("Tapped Payments");
+                AleartBox.showAleart(
+                  context,
+                  DialogType.info,
+                  'Under development',
+                  'This section Under development. Sorry for the inconvenience.',
+                );
               },
             ),
             containerRow1(
@@ -169,6 +184,10 @@ class _UserDashboardState extends State<UserDashboard> {
               text2: "",
               onTap: () {
                 print("Tapped Inventory");
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ProductList()),
+                );
               },
             ),
             containerRow1(
