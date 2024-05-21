@@ -1,7 +1,8 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:location/location.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:location/location.dart';
 import 'package:order_processing_app/services/assignment_api_service.dart';
 import 'package:order_processing_app/utils/logger.dart';
 
@@ -73,7 +74,7 @@ class GlobalLocationService with WidgetsBindingObserver {
 
     AssignmentApiService.updateEmployeeLocation(employeeId, locationData)
         .then((_) {
-      AppLogger.logInfo('Location updated in the database successfully');
+      // AppLogger.logInfo('Location updated in the database successfully');
     }).catchError((error) {
       AppLogger.logError('Failed to update location in the database: $error');
     });

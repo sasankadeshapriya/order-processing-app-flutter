@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/product_modle.dart';
 import '../models/product_response.dart'; // Ensure you have the correct import path
@@ -61,6 +62,11 @@ class ProductService {
             );
           }).toList();
 
+          // Store the opening stock value for each product using shared preferences
+          for (var product in products) {
+            await storeOpeningStock(product, currentDate);
+          }
+
           Logger().w('Successfully processed ${products.length} products');
           return ProductResponse(
               employeeName: employeeName, products: products);
@@ -76,5 +82,28 @@ class ProductService {
       Logger().e('Error fetching products: $error');
       rethrow;
     }
+  }
+
+  static Future<void> storeOpeningStock(
+      Product product, String currentDate) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String key = 'opening_stock_${product.id}_$currentDate';
+
+    if (!prefs.containsKey(key)) {
+      await prefs.setDouble(key, product.quantity);
+      Logger().w(
+          'Opening stock value stored successfully for product ${product.name}');
+    } else {
+      Logger().w(
+          'Opening stock value already exists for product ${product.name} on date $currentDate');
+    }
+  }
+
+  static Future<double> getOpeningStock(
+      int productId, String currentDate) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String key = 'opening_stock_${productId}_$currentDate';
+
+    return prefs.getDouble(key) ?? 0.0;
   }
 }

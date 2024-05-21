@@ -25,10 +25,15 @@ class ClientForm extends StatefulWidget {
 
 class _ClientFormState extends State<ClientForm> {
   final ClientService clientService = ClientService();
-  final TextEditingController _nicController = TextEditingController();
+
   final TextEditingController _locationController = TextEditingController();
-  final TextEditingController _logoController =
-      TextEditingController(); // Add controller for logo field
+  // Add controller for logo field
+  final TextEditingController _orgController = TextEditingController();
+
+  final TextEditingController _contactNumberController =
+      TextEditingController();
+  final TextEditingController _clientNameController = TextEditingController();
+
   bool _showAdditionalNicField = false; // Track additional field for NIC
   bool _showAdditionalLogoField = false; // Track additional field for logo
   late bool _isExpanded = false;
@@ -57,9 +62,10 @@ class _ClientFormState extends State<ClientForm> {
 
   @override
   void dispose() {
-    _nicController.dispose();
-    _logoController.dispose(); // Dispose logo controller
+    _contactNumberController.dispose();
     _locationController.dispose();
+    _orgController.dispose();
+    _clientNameController.dispose();
     super.dispose();
   }
 
@@ -110,6 +116,7 @@ class _ClientFormState extends State<ClientForm> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           CustomTextFormField(
+                            controller: _orgController,
                             autofocus: true,
                             labelText: 'Organization Name',
                             hintText: 'Organization Name',
@@ -151,6 +158,7 @@ class _ClientFormState extends State<ClientForm> {
                             height: 10,
                           ),
                           CustomTextFormField(
+                            controller: _contactNumberController,
                             keyboardType: TextInputType.phone,
                             hintText: 'Contact No.',
                             labelText: 'Contact No.',
@@ -163,6 +171,7 @@ class _ClientFormState extends State<ClientForm> {
                             height: 10,
                           ),
                           CustomTextFormField(
+                            controller: _clientNameController,
                             labelText: 'Client Name',
                             hintText: 'Client Name',
                             validator: FormValidator.validateClientName,
@@ -375,16 +384,16 @@ class _ClientFormState extends State<ClientForm> {
       phoneNo: _contactNumber,
       addedByEmployeeId: 1, //TokenManager.empId,
       status: 'not verified', // Default status set to 'not verified'
-      creditLimit: 0.0, // Default credit limit set to 0
-      creditPeriod: 0, // Default credit period set to 90
+      creditLimit: 30000.0, // Default credit limit set to 0
+      creditPeriod: 90, // Default credit period set to 90
       routeId: 1, // Default route ID set to 1
-      discount: 0.0,
+      discount: 1.0,
     );
 
     // Now send this data to your server
-    clientService.postClientData(newClient);
+    //clientService.postClientData(newClient);
     var result = await clientService.postClientData(newClient);
-    await Future.delayed(Duration(seconds: 1));
+    //await Future.delayed(Duration(seconds: 1));
     isLoading = false; // Turn off loading indicator after the request
 
     if (result['success']) {
@@ -401,7 +410,7 @@ class _ClientFormState extends State<ClientForm> {
           Navigator.push(context,
               MaterialPageRoute(builder: (context) => const UserDashboard()));
         },
-      )..show();
+      ).show();
     } else {
       AleartBox.showAleart(
         context,
@@ -410,6 +419,7 @@ class _ClientFormState extends State<ClientForm> {
         result['message'] ??
             'An unknown error occurred.', // Default message if none provided
       );
+      isLoading = false;
     }
   }
 }

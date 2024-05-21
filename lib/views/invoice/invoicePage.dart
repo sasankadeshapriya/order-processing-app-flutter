@@ -165,9 +165,10 @@ class _InvoicePageState extends State<InvoicePage> {
       dropdownMenuEntries: invoiceLogic.clients.map<DropdownMenuEntry<Client>>(
         (Client client) {
           //Logger().w("Building dropdown entry for client: ${client.organizationName}");
+
           return DropdownMenuEntry<Client>(
             value: client,
-            label: client.organizationName,
+            label: client.organizationName ?? 'Unknown',
             leadingIcon: Icon(client.icon),
           );
         },
@@ -555,8 +556,8 @@ class _InvoicePageState extends State<InvoicePage> {
                       if (invoiceLogic.isFullyPaid) {
                         rightSideText =
                             "Rs.${invoiceLogic.paidAmount.toStringAsFixed(2)}"; // Show paid amount if fully paid
-                        Logger().d(
-                            "Invoice fully paid, displaying Paid Amount: ${invoiceLogic.paidAmount}");
+                        // Logger().d(
+                        //     "Invoice fully paid, displaying Paid Amount: ${invoiceLogic.paidAmount}");
                       } else if (invoiceLogic.isPartiallyPaid) {
                         rightSideText =
                             "Rs.0.00"; // Display '0.0' for partially paid invoices

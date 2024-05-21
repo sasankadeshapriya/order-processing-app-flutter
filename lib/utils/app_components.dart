@@ -37,6 +37,7 @@ class AppComponents {
   static const drawReportIcon = '${iconPath}drawer_report.svg';
   static const drawInvoiceIcon = '${iconPath}drawer_invoice.svg';
   static const drawPaymentIcon = '${iconPath}drawer_payment.svg';
+  static const drawPersonIcon = '${iconPath}drawer_person.png';
   static const drawLogoutIcon = '${iconPath}drawer_logout.svg';
 
   //________________fonts
