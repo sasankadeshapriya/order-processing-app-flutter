@@ -81,7 +81,7 @@ class _MapPageState extends State<MapPage> {
 
   AppBar _buildAppBar() {
     return AppBar(
-      backgroundColor: AppColor.accentColor,
+      backgroundColor: AppColor.backgroundColor,
       leading: Padding(
         padding: const EdgeInsets.only(left: 16),
         child: IconButton(

@@ -83,7 +83,7 @@ class _InvoicePageState extends State<InvoicePage> {
               fontFamily: 'SF Pro Text',
             ),
           ),
-          backgroundColor: AppColor.accentColor,
+          backgroundColor: AppColor.backgroundColor,
         ),
         body: LayoutBuilder(
           builder: (context, constraints) {

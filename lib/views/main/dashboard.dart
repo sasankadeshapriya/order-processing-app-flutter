@@ -7,6 +7,7 @@ import 'package:order_processing_app/utils/app_components.dart';
 import 'package:order_processing_app/views/assignment/assignment_list.dart';
 import 'package:order_processing_app/views/main/drawer.dart';
 import 'package:order_processing_app/views/map/map_page.dart';
+import 'package:order_processing_app/views/reports/salesreport.dart';
 
 import '../../components/alert_dialog.dart';
 import '../clients/client_form.dart';
@@ -64,19 +65,15 @@ class _UserDashboardState extends State<UserDashboard> {
       ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.all(12.0),
-        child: SizedBox(
-          height: maxHeight * 0.08,
-          width: maxHeight * 0.08,
-          child: FloatingActionButton(
-            backgroundColor: AppColor.accentColor,
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const InvoicePage()),
-              );
-            },
-            child: const Icon(Icons.receipt_long_outlined, color: Colors.white),
-          ),
+        child: FloatingActionButton(
+          backgroundColor: AppColor.accentColor,
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const InvoicePage()),
+            );
+          },
+          child: const Icon(Icons.receipt_long_outlined, color: Colors.white),
         ),
       ),
     );
@@ -118,13 +115,13 @@ class _UserDashboardState extends State<UserDashboard> {
               text1: "",
               text2: "",
               onTap: () {
-                print("Tapped Repoerts");
-                AleartBox.showAleart(
+                Navigator.push(
                   context,
-                  DialogType.info,
-                  'Under development',
-                  'This section Under development. Sorry for the inconvenience.',
+                  MaterialPageRoute(
+                    builder: (context) => const SalesReport(),
+                  ),
                 );
+                print("Tapped Invoices");
               },
             ),
             containerRow1(
@@ -186,7 +183,7 @@ class _UserDashboardState extends State<UserDashboard> {
                 print("Tapped Inventory");
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => ProductList()),
+                  MaterialPageRoute(builder: (context) => const ProductList()),
                 );
               },
             ),

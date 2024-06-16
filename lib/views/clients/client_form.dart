@@ -96,7 +96,7 @@ class _ClientFormState extends State<ClientForm> {
             fontFamily: 'SF Pro Text',
           ),
         ),
-        backgroundColor: AppColor.accentColor,
+        backgroundColor: AppColor.backgroundColor,
       ),
       body: SafeArea(
         child: GestureDetector(

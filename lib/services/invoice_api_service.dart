@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 import 'package:order_processing_app/models/invoice_mod.dart';
 import 'package:order_processing_app/models/invoice_modle.dart';
+import 'package:order_processing_app/models/sales_invoice.dart';
 import 'package:order_processing_app/utils/logger.dart';
 
 import '../models/clients_modle.dart';
@@ -113,6 +114,20 @@ class InvoiceService {
     } catch (e) {
       Logger().e('Exception occurred while sending data: $e');
       return {'success': false, 'message': 'Exception occurred: $e'};
+    }
+  }
+
+  // Function to fetch invoices by employee ID
+  static Future<List<SalesInvoice>> fetchInvoicesByEmployeeId(
+      int employeeId) async {
+    final url = Uri.parse('$baseUrl/invoice/employee/$employeeId');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      List<dynamic> jsonResponse = json.decode(response.body);
+      return jsonResponse.map((data) => SalesInvoice.fromJson(data)).toList();
+    } else {
+      throw Exception('Failed to load invoices');
     }
   }
 }
