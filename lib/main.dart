@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:order_processing_app/utils/app_colors.dart';
 import 'package:order_processing_app/views/main/dashboard.dart';
-
 import 'common/location_service.dart';
 
 void main() {

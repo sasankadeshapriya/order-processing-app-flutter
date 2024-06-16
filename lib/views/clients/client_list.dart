@@ -7,7 +7,7 @@ import 'client_card.dart';
 import 'client_form.dart'; // Import your ClientCard widget
 
 class ClientList extends StatefulWidget {
-  const ClientList({Key? key}) : super(key: key);
+  const ClientList({super.key});
 
   @override
   _ClientListState createState() => _ClientListState();
@@ -16,11 +16,11 @@ class ClientList extends StatefulWidget {
 class _ClientListState extends State<ClientList> {
   late Future<List<Client>> futureClients;
   bool _isAscending = true;
-  TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
   List<Client> _clients = [];
   List<Client> _filteredClients = [];
-  List<Client> _searchSuggestions = [];
+  final List<Client> _searchSuggestions = [];
 
   @override
   void initState() {
@@ -70,7 +70,7 @@ class _ClientListState extends State<ClientList> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: AppColor.accentColor,
+        backgroundColor: AppColor.backgroundColor,
         leading: Padding(
           padding: const EdgeInsets.only(left: 16),
           child: IconButton(
@@ -87,7 +87,7 @@ class _ClientListState extends State<ClientList> {
         title: _isSearching
             ? TextField(
                 controller: _searchController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   hintText: 'Search clients...',
                   border: InputBorder.none,
                 ),
@@ -130,7 +130,7 @@ class _ClientListState extends State<ClientList> {
         ],
       ),
       body: _filteredClients.isEmpty && _isSearching
-          ? Center(child: Text('No clients found'))
+          ? const Center(child: Text('No clients found'))
           : FutureBuilder<List<Client>>(
               future: futureClients,
               builder: (context, snapshot) {
@@ -185,11 +185,11 @@ class _ClientListState extends State<ClientList> {
             context,
             MaterialPageRoute(
               builder: (context) =>
-                  ClientForm(), // Assuming you have a ClientDetailsPage
+                  const ClientForm(), // Assuming you have a ClientDetailsPage
             ),
           );
         },
-        child: Icon(Icons.person_add_rounded, color: Colors.white),
+        child: const Icon(Icons.person_add_rounded, color: Colors.white),
       ),
     );
   }

@@ -158,7 +158,7 @@ class _AssignmentListState extends State<AssignmentList> {
     return Scaffold(
       backgroundColor: AppColor.backgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColor.accentColor,
+        backgroundColor: AppColor.backgroundColor,
         leading: Padding(
           padding: const EdgeInsets.only(left: 16),
           child: IconButton(
