@@ -7,6 +7,7 @@ import 'package:order_processing_app/utils/app_components.dart';
 import 'package:order_processing_app/views/assignment/assignment_list.dart';
 import 'package:order_processing_app/views/main/drawer.dart';
 import 'package:order_processing_app/views/map/map_page.dart';
+import 'package:order_processing_app/views/reports/report_list_page.dart';
 import 'package:order_processing_app/views/reports/salesreport.dart';
 
 import '../../components/alert_dialog.dart';
@@ -118,10 +119,10 @@ class _UserDashboardState extends State<UserDashboard> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const SalesReport(),
+                    builder: (context) => const ReportList(),
                   ),
                 );
-                print("Tapped Invoices");
+                print("Tapped Reports");
               },
             ),
             containerRow1(
@@ -245,7 +246,13 @@ class _UserDashboardState extends State<UserDashboard> {
                     text1: "",
                     text2: "",
                     onTap: () {
-                      print("Tapped Repoerts");
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ReportList(),
+                        ),
+                      );
+                      print("Tapped Reports");
                     },
                   ),
                 ),
@@ -382,7 +389,13 @@ class _UserDashboardState extends State<UserDashboard> {
                     text1: "",
                     text2: "",
                     onTap: () {
-                      print("Tapped Repoerts");
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ReportList(),
+                        ),
+                      );
+                      print("Tapped Reports");
                     },
                   ),
                 ),
