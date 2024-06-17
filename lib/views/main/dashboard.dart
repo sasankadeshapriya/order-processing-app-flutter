@@ -1,14 +1,15 @@
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:order_processing_app/services/commission_api_service.dart';
 import 'package:order_processing_app/utils/app_colors.dart';
 import 'package:order_processing_app/utils/app_components.dart';
 import 'package:order_processing_app/views/assignment/assignment_list.dart';
 import 'package:order_processing_app/views/main/drawer.dart';
 import 'package:order_processing_app/views/map/map_page.dart';
 import 'package:order_processing_app/views/reports/report_list_page.dart';
-import 'package:order_processing_app/views/reports/salesreport.dart';
 
 import '../../components/alert_dialog.dart';
 import '../clients/client_form.dart';
@@ -23,15 +24,21 @@ class UserDashboard extends StatefulWidget {
   State<UserDashboard> createState() => _UserDashboardState();
 }
 
-class _UserDashboardState extends State<UserDashboard> {
+class _UserDashboardState extends State<UserDashboard>
+    with AutomaticKeepAliveClientMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool isLoading = false;
   late ScrollController controller;
+  double _todaysCommission = 0;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
     controller = ScrollController();
+    _loadData();
   }
 
   @override
@@ -42,39 +49,48 @@ class _UserDashboardState extends State<UserDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final double maxWidth = MediaQuery.of(context).size.width;
     final double maxHeight = MediaQuery.of(context).size.height;
     return Scaffold(
       key: _scaffoldKey,
       appBar: _buildAppBar(),
       drawer: const AppDrawer(),
-      body: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 5),
-        width: maxWidth,
-        height: maxHeight,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            if (constraints.maxWidth < 600) {
-              return _buildSmallScreenLayout(constraints.maxWidth);
-            } else if (constraints.maxWidth < 1000) {
-              return _buildMediumScreenLayout();
-            } else {
-              return _buildLargeScreenLayout();
-            }
-          },
+      body: RefreshIndicator(
+        onRefresh: _loadData,
+        color: AppColor.accentColor,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 5),
+          width: maxWidth,
+          height: maxHeight,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth < 600) {
+                return _buildSmallScreenLayout(constraints.maxWidth);
+              } else if (constraints.maxWidth < 1000) {
+                return _buildMediumScreenLayout();
+              } else {
+                return _buildLargeScreenLayout();
+              }
+            },
+          ),
         ),
       ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.all(12.0),
         child: FloatingActionButton(
-          backgroundColor: AppColor.accentColor,
+          elevation: 20, // Add a noticeable shadow
+          shape: const CircleBorder(), // Make it round
+          backgroundColor:
+              AppColor.backgroundColor, // Change background color to white
           onPressed: () {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const InvoicePage()),
             );
           },
-          child: const Icon(Icons.receipt_long_outlined, color: Colors.white),
+          child: const Icon(Icons.receipt_long_outlined,
+              color: AppColor.accentColor), // Change icon color to accent color
         ),
       ),
     );
@@ -108,118 +124,140 @@ class _UserDashboardState extends State<UserDashboard> {
         child: Column(
           children: [
             _buildListTile(),
-            const SizedBox(height: 10),
-            containerRow1(
-              image: AppComponents.dashReport,
-              image1: AppComponents.dashReportData,
-              text: "Reports",
-              text1: "",
-              text2: "",
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ReportList(),
-                  ),
-                );
-                print("Tapped Reports");
-              },
+            Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.5),
+                      spreadRadius: 2,
+                      blurRadius: 7,
+                      offset: const Offset(0, 3), // changes position of shadow
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 10),
+                    containerRow1(
+                      image: AppComponents.dashReport,
+                      image1: AppComponents.dashReportData,
+                      text: "Reports",
+                      text1: "",
+                      text2: "",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ReportList(),
+                          ),
+                        );
+                        print("Tapped Reports");
+                      },
+                    ),
+                    containerRow1(
+                      image: AppComponents.dashInvoice,
+                      image1: AppComponents.dashInvoiceData,
+                      text: "Invoices",
+                      text1: "",
+                      text2: "",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const InvoiceList(),
+                          ),
+                        );
+                        print("Tapped Invoices");
+                      },
+                    ),
+                    containerRow1(
+                      image: AppComponents.dashPayment,
+                      image1: AppComponents.dashPaymentData,
+                      text: "Payments",
+                      text1: "",
+                      text2: "",
+                      onTap: () {
+                        print("Tapped Payments");
+                        AleartBox.showAleart(
+                          context,
+                          DialogType.info,
+                          'Under development',
+                          'This section Under development. Sorry for the inconvenience.',
+                        );
+                      },
+                    ),
+                    containerRow1(
+                      image: AppComponents.dashClient,
+                      image1: AppComponents.dashClientData,
+                      text: "Clients",
+                      text1: "",
+                      text2: "",
+                      onTap: () {
+                        print("Tapped Clients");
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ClientForm(),
+                          ),
+                        );
+                        print("Tapped Invoices");
+                      },
+                    ),
+                    containerRow1(
+                      image: AppComponents.dashInventory,
+                      image1: AppComponents.dashInventoryData,
+                      text: "Inventory",
+                      text1: "",
+                      text2: "",
+                      onTap: () {
+                        print("Tapped Inventory");
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const ProductList()),
+                        );
+                      },
+                    ),
+                    containerRow1(
+                      image: AppComponents.dashAssignment,
+                      image1: AppComponents.dashAssignmentData,
+                      text: "Assignments",
+                      text1: "",
+                      text2: "",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AssignmentList(),
+                          ),
+                        );
+                        print("Tapped Assignment");
+                      },
+                    ),
+                    containerRow1(
+                      image: AppComponents.dashMap,
+                      image1: AppComponents.dashMapData,
+                      text: "Map",
+                      text1: "",
+                      text2: "",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const MapPage(),
+                          ),
+                        );
+                        print("Tapped Maps");
+                      },
+                    )
+                  ],
+                ),
+              ),
             ),
-            containerRow1(
-              image: AppComponents.dashInvoice,
-              image1: AppComponents.dashInvoiceData,
-              text: "Invoices",
-              text1: "",
-              text2: "",
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const InvoiceList(),
-                  ),
-                );
-                print("Tapped Invoices");
-              },
-            ),
-            containerRow1(
-              image: AppComponents.dashPayment,
-              image1: AppComponents.dashPaymentData,
-              text: "Payments",
-              text1: "",
-              text2: "",
-              onTap: () {
-                print("Tapped Payments");
-                AleartBox.showAleart(
-                  context,
-                  DialogType.info,
-                  'Under development',
-                  'This section Under development. Sorry for the inconvenience.',
-                );
-              },
-            ),
-            containerRow1(
-              image: AppComponents.dashClient,
-              image1: AppComponents.dashClientData,
-              text: "Clients",
-              text1: "",
-              text2: "",
-              onTap: () {
-                print("Tapped Clients");
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ClientForm(),
-                  ),
-                );
-                print("Tapped Invoices");
-              },
-            ),
-            containerRow1(
-              image: AppComponents.dashInventory,
-              image1: AppComponents.dashInventoryData,
-              text: "Inventory",
-              text1: "",
-              text2: "",
-              onTap: () {
-                print("Tapped Inventory");
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ProductList()),
-                );
-              },
-            ),
-            containerRow1(
-              image: AppComponents.dashAssignment,
-              image1: AppComponents.dashAssignmentData,
-              text: "Assignments",
-              text1: "",
-              text2: "",
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AssignmentList(),
-                  ),
-                );
-                print("Tapped Assignment");
-              },
-            ),
-            containerRow1(
-              image: AppComponents.dashMap,
-              image1: AppComponents.dashMapData,
-              text: "Map",
-              text1: "",
-              text2: "",
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const MapPage(),
-                  ),
-                );
-                print("Tapped Maps");
-              },
-            )
           ],
         ),
       ),
@@ -234,134 +272,158 @@ class _UserDashboardState extends State<UserDashboard> {
         child: Column(
           children: [
             _buildListTile(),
-            const SizedBox(height: 10),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: containerRow1(
-                    image: AppComponents.dashReport,
-                    image1: AppComponents.dashReportData,
-                    text: "Reports",
-                    text1: "",
-                    text2: "",
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ReportList(),
+            Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.5),
+                      spreadRadius: 2,
+                      blurRadius: 7,
+                      offset: const Offset(0, 3), // changes position of shadow
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 10),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: containerRow1(
+                            image: AppComponents.dashReport,
+                            image1: AppComponents.dashReportData,
+                            text: "Reports",
+                            text1: "",
+                            text2: "",
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const ReportList(),
+                                ),
+                              );
+                              print("Tapped Reports");
+                            },
+                          ),
                         ),
-                      );
-                      print("Tapped Reports");
-                    },
-                  ),
-                ),
-                Expanded(
-                  child: containerRow1(
-                    image: AppComponents.dashInvoice,
-                    image1: AppComponents.dashInvoiceData,
-                    text: "Invoices",
-                    text1: "",
-                    text2: "",
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const InvoiceList(),
+                        Expanded(
+                          child: containerRow1(
+                            image: AppComponents.dashInvoice,
+                            image1: AppComponents.dashInvoiceData,
+                            text: "Invoices",
+                            text1: "",
+                            text2: "",
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const InvoiceList(),
+                                ),
+                              );
+                              print("Tapped Invoices");
+                            },
+                          ),
                         ),
-                      );
-                      print("Tapped Invoices");
-                    },
-                  ),
-                ),
-              ],
-            ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: containerRow1(
-                    image: AppComponents.dashPayment,
-                    image1: AppComponents.dashPaymentData,
-                    text: "Payments",
-                    text1: "",
-                    text2: "",
-                    onTap: () {
-                      print("Tapped Payments");
-                    },
-                  ),
-                ),
-                Expanded(
-                  child: containerRow1(
-                    image: AppComponents.dashClient,
-                    image1: AppComponents.dashClientData,
-                    text: "Clients",
-                    text1: "",
-                    text2: "",
-                    onTap: () {
-                      print("Tapped Clients");
-                    },
-                  ),
-                ),
-              ],
-            ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: containerRow1(
-                    image: AppComponents.dashInventory,
-                    image1: AppComponents.dashInventoryData,
-                    text: "Inventory",
-                    text1: "",
-                    text2: "",
-                    onTap: () {
-                      print("Tapped Inventory");
-                    },
-                  ),
-                ),
-                Expanded(
-                  child: containerRow1(
-                    image: AppComponents.dashAssignment,
-                    image1: AppComponents.dashAssignmentData,
-                    text: "Assignments",
-                    text1: "",
-                    text2: "",
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const AssignmentList(),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: containerRow1(
+                            image: AppComponents.dashPayment,
+                            image1: AppComponents.dashPaymentData,
+                            text: "Payments",
+                            text1: "",
+                            text2: "",
+                            onTap: () {
+                              print("Tapped Payments");
+                            },
+                          ),
                         ),
-                      );
-                      print("Tapped Assignment");
-                    },
-                  ),
-                ),
-              ],
-            ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: containerRow1(
-                    image: AppComponents.dashMap,
-                    image1: AppComponents.dashMapData,
-                    text: "Map",
-                    text1: "",
-                    text2: "",
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const MapPage(),
+                        Expanded(
+                          child: containerRow1(
+                            image: AppComponents.dashClient,
+                            image1: AppComponents.dashClientData,
+                            text: "Clients",
+                            text1: "",
+                            text2: "",
+                            onTap: () {
+                              print("Tapped Clients");
+                            },
+                          ),
                         ),
-                      );
-                      print("Tapped Maps");
-                    },
-                  ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: containerRow1(
+                            image: AppComponents.dashInventory,
+                            image1: AppComponents.dashInventoryData,
+                            text: "Inventory",
+                            text1: "",
+                            text2: "",
+                            onTap: () {
+                              print("Tapped Inventory");
+                            },
+                          ),
+                        ),
+                        Expanded(
+                          child: containerRow1(
+                            image: AppComponents.dashAssignment,
+                            image1: AppComponents.dashAssignmentData,
+                            text: "Assignments",
+                            text1: "",
+                            text2: "",
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const AssignmentList(),
+                                ),
+                              );
+                              print("Tapped Assignment");
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: containerRow1(
+                            image: AppComponents.dashMap,
+                            image1: AppComponents.dashMapData,
+                            text: "Map",
+                            text1: "",
+                            text2: "",
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const MapPage(),
+                                ),
+                              );
+                              print("Tapped Maps");
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ],
         ),
@@ -377,124 +439,147 @@ class _UserDashboardState extends State<UserDashboard> {
         child: Column(
           children: [
             _buildListTile(),
-            const SizedBox(height: 20),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: containerRow1(
-                    image: AppComponents.dashReport,
-                    image1: AppComponents.dashReportData,
-                    text: "Reports",
-                    text1: "",
-                    text2: "",
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ReportList(),
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.5),
+                      spreadRadius: 2,
+                      blurRadius: 7,
+                      offset: const Offset(0, 3), // changes position of shadow
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 10),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: containerRow1(
+                            image: AppComponents.dashReport,
+                            image1: AppComponents.dashReportData,
+                            text: "Reports",
+                            text1: "",
+                            text2: "",
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const ReportList(),
+                                ),
+                              );
+                              print("Tapped Reports");
+                            },
+                          ),
                         ),
-                      );
-                      print("Tapped Reports");
-                    },
-                  ),
-                ),
-                Expanded(
-                  child: containerRow1(
-                    image: AppComponents.dashInvoice,
-                    image1: AppComponents.dashInvoiceData,
-                    text: "Invoices",
-                    text1: "",
-                    text2: "",
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const InvoiceList(),
+                        Expanded(
+                          child: containerRow1(
+                            image: AppComponents.dashInvoice,
+                            image1: AppComponents.dashInvoiceData,
+                            text: "Invoices",
+                            text1: "",
+                            text2: "",
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const InvoiceList(),
+                                ),
+                              );
+                              print("Tapped Invoices");
+                            },
+                          ),
                         ),
-                      );
-                      print("Tapped Invoices");
-                    },
-                  ),
-                ),
-                Expanded(
-                  child: containerRow1(
-                    image: AppComponents.dashPayment,
-                    image1: AppComponents.dashPaymentData,
-                    text: "Payments",
-                    text1: "",
-                    text2: "",
-                    onTap: () {
-                      print("Tapped Payments");
-                    },
-                  ),
-                ),
-                Expanded(
-                  child: containerRow1(
-                    image: AppComponents.dashClient,
-                    image1: AppComponents.dashClientData,
-                    text: "Clients",
-                    text1: "",
-                    text2: "",
-                    onTap: () {
-                      print("Tapped Clients");
-                    },
-                  ),
-                ),
-              ],
-            ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: containerRow1(
-                    image: AppComponents.dashInventory,
-                    image1: AppComponents.dashInventoryData,
-                    text: "Inventory",
-                    text1: "",
-                    text2: "",
-                    onTap: () {
-                      print("Tapped Inventory");
-                    },
-                  ),
-                ),
-                Expanded(
-                  child: containerRow1(
-                    image: AppComponents.dashAssignment,
-                    image1: AppComponents.dashAssignmentData,
-                    text: "Assignments",
-                    text1: "",
-                    text2: "",
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const AssignmentList(),
+                        Expanded(
+                          child: containerRow1(
+                            image: AppComponents.dashPayment,
+                            image1: AppComponents.dashPaymentData,
+                            text: "Payments",
+                            text1: "",
+                            text2: "",
+                            onTap: () {
+                              print("Tapped Payments");
+                            },
+                          ),
                         ),
-                      );
-                      print("Tapped Assignment");
-                    },
-                  ),
-                ),
-                Expanded(
-                  child: containerRow1(
-                    image: AppComponents.dashMap,
-                    image1: AppComponents.dashMapData,
-                    text: "Map",
-                    text1: "",
-                    text2: "",
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const MapPage(),
+                        Expanded(
+                          child: containerRow1(
+                            image: AppComponents.dashClient,
+                            image1: AppComponents.dashClientData,
+                            text: "Clients",
+                            text1: "",
+                            text2: "",
+                            onTap: () {
+                              print("Tapped Clients");
+                            },
+                          ),
                         ),
-                      );
-                      print("Tapped Maps");
-                    },
-                  ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: containerRow1(
+                            image: AppComponents.dashInventory,
+                            image1: AppComponents.dashInventoryData,
+                            text: "Inventory",
+                            text1: "",
+                            text2: "",
+                            onTap: () {
+                              print("Tapped Inventory");
+                            },
+                          ),
+                        ),
+                        Expanded(
+                          child: containerRow1(
+                            image: AppComponents.dashAssignment,
+                            image1: AppComponents.dashAssignmentData,
+                            text: "Assignments",
+                            text1: "",
+                            text2: "",
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const AssignmentList(),
+                                ),
+                              );
+                              print("Tapped Assignment");
+                            },
+                          ),
+                        ),
+                        Expanded(
+                          child: containerRow1(
+                            image: AppComponents.dashMap,
+                            image1: AppComponents.dashMapData,
+                            text: "Map",
+                            text1: "",
+                            text2: "",
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const MapPage(),
+                                ),
+                              );
+                              print("Tapped Maps");
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ],
         ),
@@ -502,69 +587,157 @@ class _UserDashboardState extends State<UserDashboard> {
     );
   }
 
+  Future<void> _loadData() async {
+    final commissions = await CommissionService.getCommissionsByEmpId(1);
+    final todaysCommissions =
+        await CommissionService.getTodaysCommissions(commissions);
+    double todaysCommission = 0;
+    if (todaysCommissions.isNotEmpty) {
+      todaysCommission = double.parse(todaysCommissions.first.commission);
+    }
+    setState(() {
+      _todaysCommission = todaysCommission;
+    });
+    return;
+  }
+
   Widget _buildListTile() {
     return ListTile(
       contentPadding: const EdgeInsets.only(left: 10, right: 10),
-      title: const Text(
-        "Welcome Back John",
-        style: TextStyle(
-          fontWeight: FontWeight.w500,
-          letterSpacing: 1,
-          fontFamily: "PublicSansMedium",
-        ),
-        maxLines: 1,
-      ),
-      subtitle: Padding(
-        padding: const EdgeInsets.only(top: 5),
-        child: Container(
-          height: 50,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColor.placeholderTextColor),
-          ),
-          child: const Padding(
-            padding: EdgeInsets.all(12.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    "Daily Commission :",
-                    style: TextStyle(
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 1,
-                      fontFamily: "PublicSansMedium",
-                    ),
-                    maxLines: 1,
-                  ),
-                ),
-                Text(
-                  "\$00.00",
-                  style: TextStyle(
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 1,
-                    fontFamily: "PublicSansMedium",
-                    color: AppColor.accentColor,
-                  ),
-                  maxLines: 1,
-                ),
-              ],
+      title: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.5),
+              spreadRadius: 2,
+              blurRadius: 7,
+              offset: const Offset(0, 3), // changes position of shadow
             ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(10.0),
+          child: Column(
+            children: [
+              SizedBox(
+                height: 60,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 12, top: 6),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Welcome back",
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 1,
+                          fontFamily: "PublicSansMedium",
+                          fontSize: 12,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.person,
+                            size: 18,
+                            color: AppColor.accentColor,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            "Thisara Bodhithunga",
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 16,
+                              color: AppColor.primaryTextColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColor.backgroundColor,
+                  borderRadius: BorderRadius.circular(14),
+                  // border: Border.all(
+                  //   color: const Color.fromARGB(228, 86, 86, 86),
+                  //   width: 2,
+                  // ),
+                ),
+                height: 70,
+                child: Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.attach_money,
+                        size: 30,
+                        color: AppColor.primaryTextColor,
+                      ),
+                      const SizedBox(width: 10),
+                      Column(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              "Daily Commission",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                                letterSpacing: 1,
+                                fontFamily: "PublicSansMedium",
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            "LKR ${_todaysCommission.toStringAsFixed(2)}",
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 18,
+                              color: AppColor.primaryTextColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
+}
 
-  Widget containerRow1({
-    required String image,
-    required String image1,
-    required String text,
-    required String text1,
-    required String text2,
-    required VoidCallback onTap,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 10, right: 10, bottom: 10),
+Widget containerRow1({
+  required String image,
+  required String image1,
+  required String text,
+  required String text1,
+  required String text2,
+  required VoidCallback onTap,
+}) {
+  return Padding(
+    padding: const EdgeInsets.only(left: 10, right: 10, bottom: 10),
+    child: Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.5),
+            spreadRadius: 2,
+            blurRadius: 7,
+            offset: const Offset(0, 3), // changes position of shadow
+          ),
+        ],
+      ),
       child: Material(
         borderRadius: BorderRadius.circular(14),
         elevation: 4,
@@ -651,6 +824,6 @@ class _UserDashboardState extends State<UserDashboard> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }
