@@ -113,7 +113,10 @@ class _SalesReportState extends State<SalesReport> {
         ),
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppColor.accentColor),
+            ))
           : SingleChildScrollView(
               child: Column(
                 children: [
