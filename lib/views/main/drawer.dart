@@ -1,19 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:order_processing_app/services/connection_check_service.dart';
 import 'package:order_processing_app/services/token_manager.dart';
 import 'package:order_processing_app/utils/app_colors.dart';
 import 'package:order_processing_app/utils/app_components.dart';
 import 'package:order_processing_app/utils/util_functions.dart';
 import 'package:order_processing_app/views/auth/login.dart';
+import 'package:order_processing_app/views/clients/client_list.dart';
+import 'package:order_processing_app/views/inventory/product_list.dart';
 import 'package:order_processing_app/views/invoice/invoicePage.dart';
+import 'package:order_processing_app/views/invoice/invoice_list_page.dart';
 
-import '../clients/client_list.dart';
-import '../inventory/product_list.dart';
-import '../invoice/invoice_list_page.dart';
+enum DrawerMenu { none, client, invoice, inventory }
 
 class AppDrawer extends StatefulWidget {
-  const AppDrawer({super.key});
+  final String userName;
+  final String userEmail;
+  final String userProfilePic;
+  final Color connectionStatusColor; // This color will be passed from outside
+
+  const AppDrawer({
+    super.key,
+    required this.userName,
+    required this.userEmail,
+    required this.userProfilePic,
+    required this.connectionStatusColor,
+  });
 
   @override
   _AppDrawerState createState() => _AppDrawerState();
@@ -31,17 +44,26 @@ class _AppDrawerState extends State<AppDrawer> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.only(top: 80, left: 30, bottom: 30),
+              padding: const EdgeInsets.only(top: 80, left: 30, bottom: 20),
               child: Stack(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     backgroundColor: Colors.white,
                     radius: 50,
-                    child: Text(
-                      'JD',
-                      style:
-                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
+                    backgroundImage: widget.userProfilePic.isNotEmpty
+                        ? NetworkImage(widget.userProfilePic)
+                        : null,
+                    child: widget.userProfilePic.isEmpty
+                        ? Text(
+                            widget.userName.isNotEmpty
+                                ? widget.userName[0].toUpperCase()
+                                : "", // Get the first letter if the name is not empty
+                            style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black),
+                          )
+                        : null, // No child text when the image is available
                   ),
                   Positioned(
                     bottom: 0,
@@ -51,7 +73,8 @@ class _AppDrawerState extends State<AppDrawer> {
                       height: 20,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.green,
+                        color: widget
+                            .connectionStatusColor, // Use widget.connectionStatusColor directly
                         border: Border.all(color: Colors.white, width: 2),
                       ),
                     ),
@@ -65,19 +88,19 @@ class _AppDrawerState extends State<AppDrawer> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'John Doe',
+                    widget.userName, // Dynamic user name
                     style: GoogleFonts.poppins(
                       color: Colors.white,
                       fontSize: 20,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                   const SizedBox(height: 5),
                   Text(
-                    'johndoe@gmail.com',
+                    widget.userEmail, // Dynamic user email
                     style: GoogleFonts.poppins(
                       color: const Color(0xA8E5E5E5),
-                      fontSize: 16,
+                      fontSize: 14,
                       fontWeight: FontWeight.w300,
                     ),
                   ),
@@ -91,7 +114,7 @@ class _AppDrawerState extends State<AppDrawer> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => ProductList(),
+                            builder: (context) => const ProductList(),
                           ),
                         );
                       }),
@@ -109,7 +132,7 @@ class _AppDrawerState extends State<AppDrawer> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => InvoicePage(),
+                            builder: (context) => const InvoicePage(),
                           ),
                         );
                       }),
@@ -117,7 +140,7 @@ class _AppDrawerState extends State<AppDrawer> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => InvoiceList(),
+                            builder: (context) => const InvoiceList(),
                           ),
                         );
                       }),
@@ -128,7 +151,7 @@ class _AppDrawerState extends State<AppDrawer> {
                       AppComponents.drawPaymentIcon, 'Payment', () {}),
                   const SizedBox(height: 8),
                   buildExpandableTile(
-                    AppComponents.drawPaymentIcon,
+                    AppComponents.drawClientIcon,
                     'Client',
                     DrawerMenu.client,
                     [
@@ -139,7 +162,7 @@ class _AppDrawerState extends State<AppDrawer> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => ClientList(),
+                            builder: (context) => const ClientList(),
                           ),
                         );
                       }),
@@ -149,7 +172,7 @@ class _AppDrawerState extends State<AppDrawer> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 30),
+              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
               child: buildListTile(AppComponents.drawLogoutIcon, 'Log out',
                   () async {
                 await _handleLogout(context);
@@ -165,6 +188,7 @@ class _AppDrawerState extends State<AppDrawer> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
+        borderRadius: BorderRadius.circular(10),
         onTap: () => onTap(),
         splashColor: Colors.grey.withOpacity(0.3),
         child: ListTile(
@@ -196,6 +220,7 @@ class _AppDrawerState extends State<AppDrawer> {
         Material(
           color: Colors.transparent,
           child: InkWell(
+            borderRadius: BorderRadius.circular(10),
             onTap: () {
               setState(() {
                 _expandedMenu = isExpanded ? DrawerMenu.none : menu;
@@ -218,45 +243,63 @@ class _AppDrawerState extends State<AppDrawer> {
                   fontFamily: AppComponents.fontSFProTextBold,
                 ),
               ),
+              trailing: isExpanded
+                  ? const Icon(Icons.arrow_drop_up, color: Colors.white)
+                  : const Icon(Icons.arrow_drop_down, color: Colors.white),
             ),
           ),
         ),
-        if (isExpanded)
-          Padding(
-            padding: const EdgeInsets.only(left: 13.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: children.map((widget) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 3.0),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColor.primaryTextColor,
-                      border: Border.all(color: Colors.white70),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 17.0),
-                      child: widget,
-                    ),
+        AnimatedSize(
+          curve: Curves.fastOutSlowIn,
+          duration: const Duration(milliseconds: 500),
+          child: isExpanded
+              ? Padding(
+                  padding: const EdgeInsets.only(left: 1.0, top: 3),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: children.map((widget) {
+                      return Material(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                        child: InkWell(
+                          onTap: () {
+                            // Define the action for the tap here.
+                          },
+                          splashColor: Colors.blue,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 3.0),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: AppColor.backgroundColor,
+                                border: Border.all(color: Colors.white70),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.only(left: 17.0),
+                                child: widget,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
                   ),
-                );
-              }).toList(),
-            ),
-          ),
+                )
+              : Container(),
+        ),
       ],
     );
   }
 
   Widget buildSubMenuItem(String title, Function onTap) {
     return ListTile(
-      contentPadding: const EdgeInsets.only(left: 50.0, right: 16.0, bottom: 0),
+      contentPadding: const EdgeInsets.only(left: 20.0, right: 16.0, bottom: 0),
       title: Text(
         title,
         style: TextStyle(
-          color: Colors.white70,
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
+          color: AppColor.primaryTextColor,
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
           fontFamily: AppComponents.fontSFProTextBold,
         ),
       ),
@@ -274,5 +317,3 @@ class _AppDrawerState extends State<AppDrawer> {
     UtilFunctions.navigateTo(context, const Login());
   }
 }
-
-enum DrawerMenu { none, client, invoice, inventory }

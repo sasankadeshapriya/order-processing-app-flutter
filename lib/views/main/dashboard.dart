@@ -1,9 +1,11 @@
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:order_processing_app/models/employee_model.dart';
 import 'package:order_processing_app/services/commission_api_service.dart';
+import 'package:order_processing_app/services/connection_check_service.dart';
+import 'package:order_processing_app/services/employee_api_service.dart';
 import 'package:order_processing_app/utils/app_colors.dart';
 import 'package:order_processing_app/utils/app_components.dart';
 import 'package:order_processing_app/views/assignment/assignment_list.dart';
@@ -30,6 +32,10 @@ class _UserDashboardState extends State<UserDashboard>
   bool isLoading = false;
   late ScrollController controller;
   double _todaysCommission = 0;
+  String _userName = "Loading...";
+  String _userEmail = "";
+  String _userProfilePic = "";
+  Color connectionStatusColor = Colors.grey; // Default to grey
 
   @override
   bool get wantKeepAlive => true;
@@ -39,12 +45,19 @@ class _UserDashboardState extends State<UserDashboard>
     super.initState();
     controller = ScrollController();
     _loadData();
+    _fetchUserDetails();
+    ConnectivityChecker.instance.onConnectivityChanged = (isConnected) {
+      setState(() {
+        connectionStatusColor = isConnected ? Colors.green : Colors.grey;
+      });
+    };
   }
 
   @override
   void dispose() {
     controller.dispose();
     super.dispose();
+    ConnectivityChecker.instance.onConnectivityChanged = null;
   }
 
   @override
@@ -55,9 +68,17 @@ class _UserDashboardState extends State<UserDashboard>
     return Scaffold(
       key: _scaffoldKey,
       appBar: _buildAppBar(),
-      drawer: const AppDrawer(),
+      drawer: AppDrawer(
+        userName: _userName,
+        userEmail: _userEmail,
+        userProfilePic: _userProfilePic,
+        connectionStatusColor: connectionStatusColor,
+      ),
       body: RefreshIndicator(
-        onRefresh: _loadData,
+        onRefresh: () async {
+          await _loadData();
+          await _fetchUserDetails();
+        },
         color: AppColor.accentColor,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 5),
@@ -135,7 +156,7 @@ class _UserDashboardState extends State<UserDashboard>
                       color: Colors.grey.withOpacity(0.5),
                       spreadRadius: 2,
                       blurRadius: 7,
-                      offset: const Offset(0, 3), // changes position of shadow
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
@@ -601,6 +622,23 @@ class _UserDashboardState extends State<UserDashboard>
     return;
   }
 
+  Future<void> _fetchUserDetails() async {
+    try {
+      EmployeeModel user =
+          await EmployeeService.getEmployeeDetails(1); // Example user ID
+      setState(() {
+        _userName = user.name;
+        _userEmail = user.email ?? "";
+        _userProfilePic = user.profilePicture ?? "";
+      });
+    } catch (e) {
+      print("Failed to fetch user details: $e");
+      setState(() {
+        _userName = "Failed to load";
+      });
+    }
+  }
+
   Widget _buildListTile() {
     return ListTile(
       contentPadding: const EdgeInsets.only(left: 10, right: 10),
@@ -631,11 +669,11 @@ class _UserDashboardState extends State<UserDashboard>
                       const Text(
                         "Welcome back",
                         style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 1,
-                          fontFamily: "PublicSansMedium",
-                          fontSize: 12,
-                        ),
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 1,
+                            fontFamily: "PublicSansMedium",
+                            fontSize: 12,
+                            color: AppColor.placeholderTextColor),
                       ),
                       Row(
                         children: [
@@ -646,9 +684,9 @@ class _UserDashboardState extends State<UserDashboard>
                           ),
                           const SizedBox(width: 5),
                           Text(
-                            "Thisara Bodhithunga",
+                            _userName,
                             style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w600,
                               fontSize: 16,
                               color: AppColor.primaryTextColor,
                             ),
@@ -659,15 +697,15 @@ class _UserDashboardState extends State<UserDashboard>
                   ),
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 1),
               Container(
                 decoration: BoxDecoration(
                   color: AppColor.backgroundColor,
                   borderRadius: BorderRadius.circular(14),
-                  // border: Border.all(
-                  //   color: const Color.fromARGB(228, 86, 86, 86),
-                  //   width: 2,
-                  // ),
+                  border: Border.all(
+                    color: const Color.fromARGB(38, 228, 228, 228),
+                    width: 2,
+                  ),
                 ),
                 height: 70,
                 child: Padding(
@@ -677,26 +715,26 @@ class _UserDashboardState extends State<UserDashboard>
                       const Icon(
                         Icons.attach_money,
                         size: 30,
-                        color: AppColor.primaryTextColor,
+                        color: AppColor.accentColor,
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 12),
                       Column(
                         children: [
                           const Expanded(
                             child: Text(
                               "Daily Commission",
                               style: TextStyle(
-                                fontWeight: FontWeight.w500,
-                                letterSpacing: 1,
-                                fontFamily: "PublicSansMedium",
-                                fontSize: 12,
-                              ),
+                                  fontWeight: FontWeight.w500,
+                                  letterSpacing: 1,
+                                  fontFamily: "PublicSansMedium",
+                                  fontSize: 12,
+                                  color: AppColor.placeholderTextColor),
                             ),
                           ),
                           Text(
                             "LKR ${_todaysCommission.toStringAsFixed(2)}",
                             style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w600,
                               fontSize: 18,
                               color: AppColor.primaryTextColor,
                             ),
