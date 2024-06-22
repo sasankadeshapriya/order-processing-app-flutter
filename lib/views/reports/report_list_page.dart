@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:order_processing_app/utils/app_colors.dart';
+import 'package:order_processing_app/views/reports/emp_sales_report.dart';
 import 'package:order_processing_app/views/reports/salesreport.dart';
 
 class ReportList extends StatefulWidget {
@@ -105,8 +106,14 @@ class _ReportListState extends State<ReportList> {
                 );
               }),
               const SizedBox(height: 10),
-              _buildReportContainer("Commission Report", () {
-                // Navigate to Commission Report
+              _buildReportContainer("Cash / Credit Sales", () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        const EmpSalesReport(), // Ensure this page exists
+                  ),
+                );
               }),
             ],
           ),
