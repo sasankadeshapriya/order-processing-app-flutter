@@ -161,7 +161,7 @@ class _EmpSalesReportState extends State<EmpSalesReport> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColor.backgroundColor,
         title: const Text(
           'Cash / Credit Sales Report',
           style: TextStyle(

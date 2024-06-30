@@ -67,6 +67,7 @@ class _UserDashboardState extends State<UserDashboard>
     final double maxHeight = MediaQuery.of(context).size.height;
     return Scaffold(
       key: _scaffoldKey,
+      backgroundColor: AppColor.backgroundColor,
       appBar: _buildAppBar(),
       drawer: AppDrawer(
         userName: _userName,
