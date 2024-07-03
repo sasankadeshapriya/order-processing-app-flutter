@@ -23,6 +23,8 @@ class CustomTextFormField extends StatefulWidget {
   final double buttonBorderRadius;
   final TextEditingController? controller;
   final Widget? suffixIcon;
+  final Widget? prefixIcon;
+  final bool showPrefixIcon;
   final bool showBorder;
   final bool obscure;
   final bool showVisibilityIcon;
@@ -35,6 +37,7 @@ class CustomTextFormField extends StatefulWidget {
     this.prefixText,
     this.suffixText,
     this.suffixIcon,
+    this.prefixIcon,
     this.autofocus = false,
     this.readOnly = false,
     this.textAlign = TextAlign.right,
@@ -51,7 +54,8 @@ class CustomTextFormField extends StatefulWidget {
     this.showBorder = true,
     this.obscure = false,
     this.showVisibilityIcon = false,
-    this.initialValue = '', // Initialize showVisibilityIcon
+    this.initialValue, // Initialize showVisibilityIcon
+    this.showPrefixIcon = false,
   });
 
   @override
@@ -60,10 +64,22 @@ class CustomTextFormField extends StatefulWidget {
 
 class _CustomTextFormFieldState extends State<CustomTextFormField> {
   late bool obscureText;
+  late TextEditingController _controller;
+
   @override
   void initState() {
     super.initState();
     obscureText = widget.obscure;
+    _controller =
+        widget.controller ?? TextEditingController(text: widget.initialValue);
+  }
+
+  @override
+  void dispose() {
+    if (widget.controller == null) {
+      _controller.dispose();
+    }
+    super.dispose();
   }
 
   @override
@@ -72,6 +88,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
       alignment: Alignment.centerRight,
       children: [
         TextFormField(
+          controller: _controller,
           initialValue: widget.initialValue,
           obscureText: obscureText,
           autofocus: widget.autofocus,
@@ -84,6 +101,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
             labelText: widget.labelText,
             labelStyle: const TextStyle(fontWeight: FontWeight.bold),
             prefixText: widget.prefixText,
+            prefixIcon: widget.showPrefixIcon ? widget.prefixIcon : null,
             suffixIcon: widget
                     .showVisibilityIcon // Check if visibility icon should be shown
                 ? GestureDetector(

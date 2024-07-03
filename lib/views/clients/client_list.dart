@@ -4,7 +4,7 @@ import '../../models/clients_modle.dart';
 import '../../services/client_api_service.dart';
 import '../../utils/app_colors.dart';
 import 'client_card.dart';
-import 'client_form.dart'; // Import your ClientCard widget
+import 'client_form.dart';
 
 class ClientList extends StatefulWidget {
   const ClientList({super.key});
@@ -20,7 +20,6 @@ class _ClientListState extends State<ClientList> {
   bool _isSearching = false;
   List<Client> _clients = [];
   List<Client> _filteredClients = [];
-  final List<Client> _searchSuggestions = [];
 
   @override
   void initState() {
@@ -45,7 +44,6 @@ class _ClientListState extends State<ClientList> {
     setState(() {
       _isSearching = false;
       _searchController.clear();
-      _searchSuggestions.clear();
       _filterClients('');
     });
   }
@@ -64,6 +62,41 @@ class _ClientListState extends State<ClientList> {
               .contains(value.toLowerCase()) ||
           (client.phoneNo != null && client.phoneNo!.contains(value));
     }).toList();
+  }
+
+  void _removeClient(Client client) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Removal'),
+        content: const Text('Are you sure you want to remove this client?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _clients.remove(client);
+                _filterClients(_searchController.text);
+              });
+              Navigator.of(context).pop();
+            },
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _editClient(Client client) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ClientForm(client: client),
+      ),
+    );
   }
 
   @override
@@ -163,14 +196,9 @@ class _ClientListState extends State<ClientList> {
                           client: client,
                           onPressed: () {
                             // Handle the card press action
-                            // For example, navigate to client details page
-                            // Navigator.push(
-                            //   context,
-                            //   MaterialPageRoute(
-                            //     builder: (context) => ClientDetailsPage(client: client), // Assuming you have a ClientDetailsPage
-                            //   ),
-                            // );
                           },
+                          onEdit: () => _editClient(client),
+                          onRemove: () => _removeClient(client),
                         ),
                       );
                     },
@@ -185,7 +213,7 @@ class _ClientListState extends State<ClientList> {
             context,
             MaterialPageRoute(
               builder: (context) =>
-                  const ClientForm(), // Assuming you have a ClientDetailsPage
+                  const ClientForm(), // Assuming you have a ClientForm
             ),
           );
         },

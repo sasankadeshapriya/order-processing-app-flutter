@@ -3,8 +3,10 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  connectivity_plus
-  rive_common
+
+  file_selector_windows
+connectivity_plus
+rive_common
   smart_auth
 )
 
