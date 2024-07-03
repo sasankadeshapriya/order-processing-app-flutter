@@ -39,6 +39,7 @@ class AppComponents {
   static const drawPaymentIcon = '${iconPath}drawer_payment.svg';
   static const drawPersonIcon = '${iconPath}drawer_person.png';
   static const drawLogoutIcon = '${iconPath}drawer_logout.svg';
+  static const drawClientIcon = '${iconPath}drawer_client.svg';
 
   //________________fonts
   static String fontHiragino = "HiraginoSans";

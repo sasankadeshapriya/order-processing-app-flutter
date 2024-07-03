@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:order_processing_app/services/connection_check_service.dart';
 import 'package:order_processing_app/utils/app_colors.dart';
 import 'package:order_processing_app/views/main/dashboard.dart';
 import 'common/location_service.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  ConnectivityChecker.instance; // Initialize the connectivity checker
   runApp(const MyApp());
 }
+
+final GlobalKey<ScaffoldState> globalScaffoldKey = GlobalKey<ScaffoldState>();
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -41,7 +46,10 @@ class _MyAppState extends State<MyApp> {
       theme: ThemeData(
         scaffoldBackgroundColor: AppColor.backgroundColor,
       ),
-      home: const UserDashboard(),
+      home: Scaffold(
+        key: globalScaffoldKey, // Use the global scaffold key here
+        body: const UserDashboard(),
+      ),
     );
   }
 }
