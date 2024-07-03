@@ -6,6 +6,7 @@ import 'package:order_processing_app/utils/app_colors.dart';
 class InvoiceCard extends StatelessWidget {
   const InvoiceCard({
     super.key,
+
     required this.organizationName,
     required this.createdAt,
     required this.creditPeriodEndDate,
@@ -20,6 +21,9 @@ class InvoiceCard extends StatelessWidget {
   final double paidAmount;
   final double totalAmount;
   final String referenceNumber;
+
+  });
+
 
   @override
   Widget build(BuildContext context) {

@@ -59,6 +59,7 @@ dependencies:
   pie_chart: ^5.4.0
   connectivity_plus: ^6.0.3
 
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -68,7 +69,11 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
+ upstream
   flutter_lints: ^4.0.0
+
+
+
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
