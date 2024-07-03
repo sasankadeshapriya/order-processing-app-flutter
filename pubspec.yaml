@@ -57,6 +57,7 @@ dependencies:
   fl_chart: ^0.68.0
   flutter_charts: ^0.5.2
   pie_chart: ^5.4.0
+  connectivity_plus: ^6.0.3
 
 dev_dependencies:
   flutter_test:

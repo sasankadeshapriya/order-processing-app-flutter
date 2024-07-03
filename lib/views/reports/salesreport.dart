@@ -1,11 +1,7 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:order_processing_app/models/sales_invoice.dart';
 import 'package:order_processing_app/services/invoice_api_service.dart';
-import 'package:intl/intl.dart';
 import 'package:order_processing_app/utils/app_colors.dart';
 import 'package:order_processing_app/widgets/bar_chart_widget.dart';
 import 'package:order_processing_app/widgets/pie_chart_widget.dart';
@@ -315,16 +311,17 @@ class _SalesReportState extends State<SalesReport> {
     return DataTable(
       columns: columns
           .map((String column) => DataColumn(
-                  label: Text(
-                column,
-                style: const TextStyle(
-                  color: AppColor.primaryTextColor,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
-                  fontFamily: 'SF Pro Text',
+                label: Text(
+                  column,
+                  style: const TextStyle(
+                    color: AppColor.primaryTextColor,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1,
+                    fontFamily: 'SF Pro Text',
+                  ),
                 ),
-              )))
+              ))
           .toList(),
       rows: productData.entries.map((entry) {
         return DataRow(
