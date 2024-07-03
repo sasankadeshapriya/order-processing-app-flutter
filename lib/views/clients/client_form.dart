@@ -15,9 +15,9 @@ import 'client_location.dart';
 import 'image_handller.dart';
 
 class ClientForm extends StatefulWidget {
-  const ClientForm({
-    super.key,
-  });
+  final Client? client;
+
+  const ClientForm({Key? key, this.client}) : super(key: key);
 
   @override
   _ClientFormState createState() => _ClientFormState();
@@ -25,27 +25,25 @@ class ClientForm extends StatefulWidget {
 
 class _ClientFormState extends State<ClientForm> {
   final ClientService clientService = ClientService();
-
   final TextEditingController _locationController = TextEditingController();
-  // Add controller for logo field
   final TextEditingController _orgController = TextEditingController();
-
   final TextEditingController _contactNumberController =
       TextEditingController();
   final TextEditingController _clientNameController = TextEditingController();
 
-  bool _showAdditionalNicField = false; // Track additional field for NIC
-  bool _showAdditionalLogoField = false; // Track additional field for logo
-  late bool _isExpanded = false;
+  bool _showAdditionalNicField = false;
+  bool _showAdditionalLogoField = false;
+  bool _isExpanded = false;
   final _formKey = GlobalKey<FormState>();
-  bool isLoading = false; // Add a loading state
+  bool isLoading = false;
+  String appBarTitle = 'Client Entry Form';
+  bool showPrefixIcon = false;
 
   String? _organizationName;
   String? _nicFrontImagePath;
   String? _nicBackImagePath;
   String? _logoImagePath;
   String? _contactNumber;
-
   String? _clientName;
   String? _shippingAddress;
   String? _taxId;
@@ -56,8 +54,26 @@ class _ClientFormState extends State<ClientForm> {
   @override
   void initState() {
     super.initState();
+    if (widget.client != null) {
+      appBarTitle = 'Update Client Form';
+      Logger().i('Selected Client for Edit:', error: widget.client);
 
-    // Initialize logo controller
+      _orgController.text = widget.client!.organizationName ?? '';
+      _clientNameController.text = widget.client!.name ?? '';
+      _contactNumberController.text = widget.client!.phoneNo ?? '';
+      _latitude = widget.client!.latitude;
+      _longitude = widget.client!.longitude;
+      if (_latitude != null && _longitude != null) {
+        // _locationController.text = 'Lat: $_latitude, Lng: $_longitude';
+      }
+
+      // Log client details
+      Logger().i('Organization Name: ${widget.client!.organizationName}');
+      Logger().i('Client Name: ${widget.client!.name}');
+      Logger().i('Contact Number: ${widget.client!.phoneNo}');
+      Logger().i('Latitude: ${widget.client!.latitude}');
+      Logger().i('Longitude: ${widget.client!.longitude}');
+    }
   }
 
   @override
@@ -86,8 +102,8 @@ class _ClientFormState extends State<ClientForm> {
             },
           ),
         ),
-        title: const Text(
-          'Client Entry Form',
+        title: Text(
+          appBarTitle,
           style: TextStyle(
             color: Color(0xFF464949),
             fontSize: 16,
@@ -125,15 +141,14 @@ class _ClientFormState extends State<ClientForm> {
                               _organizationName = value;
                             },
                           ),
-
-                          const SizedBox(
-                            height: 10,
-                          ),
+                          const SizedBox(height: 10),
                           CustomTextFormField(
                             readOnly: true,
-                            controller:
-                                _locationController, // Controller to display location data
+                            controller: _locationController,
                             labelText: 'Location',
+                            prefixIcon:
+                                Icon(Icons.check_circle, color: Colors.green),
+                            showPrefixIcon: showPrefixIcon,
                             onAddPressed: () async {
                               var locationResult = await Navigator.push(
                                 context,
@@ -142,21 +157,16 @@ class _ClientFormState extends State<ClientForm> {
                                 ),
                               );
 
-                              // Check if the locationResult is not null and then update latitude and longitude
                               if (locationResult != null) {
-                                _latitude = locationResult['latitude'];
-                                _longitude = locationResult['longitude'];
-
-                                // Update the text field to show these values
-                                _locationController.text =
-                                    'Lat: $_latitude, Lng: $_longitude';
+                                setState(() {
+                                  showPrefixIcon = true;
+                                  _latitude = locationResult['latitude'];
+                                  _longitude = locationResult['longitude'];
+                                });
                               }
                             },
                           ),
-
-                          const SizedBox(
-                            height: 10,
-                          ),
+                          const SizedBox(height: 10),
                           CustomTextFormField(
                             controller: _contactNumberController,
                             keyboardType: TextInputType.phone,
@@ -167,9 +177,7 @@ class _ClientFormState extends State<ClientForm> {
                               _contactNumber = value;
                             },
                           ),
-                          const SizedBox(
-                            height: 10,
-                          ),
+                          const SizedBox(height: 10),
                           CustomTextFormField(
                             controller: _clientNameController,
                             labelText: 'Client Name',
@@ -179,9 +187,7 @@ class _ClientFormState extends State<ClientForm> {
                               _clientName = value;
                             },
                           ),
-                          const SizedBox(
-                            height: 10,
-                          ),
+                          const SizedBox(height: 10),
                           if (_isExpanded)
                             Column(
                               children: [
@@ -195,9 +201,7 @@ class _ClientFormState extends State<ClientForm> {
                                     });
                                   },
                                 ),
-                                const SizedBox(
-                                  height: 8,
-                                ),
+                                const SizedBox(height: 8),
                                 if (_showAdditionalNicField)
                                   Column(
                                     children: [
@@ -213,9 +217,7 @@ class _ClientFormState extends State<ClientForm> {
                                           });
                                         },
                                       ),
-                                      const SizedBox(
-                                        height: 10,
-                                      ),
+                                      const SizedBox(height: 10),
                                       CustomTextFormField(
                                         labelText: 'Back NIC Image',
                                         buttonText: 'Choose File',
@@ -230,9 +232,7 @@ class _ClientFormState extends State<ClientForm> {
                                       ),
                                     ],
                                   ),
-                                const SizedBox(
-                                  height: 8,
-                                ),
+                                const SizedBox(height: 8),
                                 CustomTextFormField(
                                   readOnly: true,
                                   labelText: 'LOGO',
@@ -243,9 +243,7 @@ class _ClientFormState extends State<ClientForm> {
                                     });
                                   },
                                 ),
-                                const SizedBox(
-                                  height: 8,
-                                ),
+                                const SizedBox(height: 8),
                                 if (_showAdditionalLogoField)
                                   CustomTextFormField(
                                     labelText: 'Logo Image',
@@ -259,9 +257,7 @@ class _ClientFormState extends State<ClientForm> {
                                       });
                                     },
                                   ),
-                                const SizedBox(
-                                  height: 10,
-                                ),
+                                const SizedBox(height: 10),
                                 CustomTextFormField(
                                   labelText: 'Business Address',
                                   hintText: 'Business Address',
@@ -270,9 +266,7 @@ class _ClientFormState extends State<ClientForm> {
                                     _shippingAddress = value;
                                   },
                                 ),
-                                const SizedBox(
-                                  height: 10,
-                                ),
+                                const SizedBox(height: 10),
                                 CustomTextFormField(
                                   labelText: 'Tax Id',
                                   hintText: 'Tax Id',
@@ -281,26 +275,20 @@ class _ClientFormState extends State<ClientForm> {
                                   },
                                   validator: FormValidator.taxID,
                                 ),
-                                const SizedBox(
-                                  height: 10,
-                                ),
+                                const SizedBox(height: 10),
                                 CustomTextFormField(
-                                  labelText: ' Business Details',
-                                  hintText: ' Business Details',
+                                  labelText: 'Business Details',
+                                  hintText: 'Business Details',
                                   validator:
                                       FormValidator.validateBusinessDetails,
                                   onSaved: (value) {
                                     _businessDetails = value;
                                   },
                                 ),
-                                const SizedBox(
-                                  height: 10,
-                                ),
+                                const SizedBox(height: 10),
                               ],
                             ),
-                          const SizedBox(
-                            height: 15,
-                          ),
+                          const SizedBox(height: 15),
                           GestureDetector(
                             onTap: () {
                               setState(() {
@@ -326,7 +314,7 @@ class _ClientFormState extends State<ClientForm> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 80), // Adjust as needed
+                          const SizedBox(height: 80),
                         ],
                       ),
                     ),
@@ -338,16 +326,13 @@ class _ClientFormState extends State<ClientForm> {
                 child: Align(
                   alignment: Alignment.bottomCenter,
                   child: CustomButton(
-                    buttonText: 'Add This Client',
+                    buttonText: widget.client != null
+                        ? 'Update Client'
+                        : 'Add This Client',
                     onTap: () {
-                      setState(() {
-                        isLoading = true;
-                      });
                       _handleAddClient();
                     },
                     isLoading: isLoading,
-
-                    // Other code...
                   ),
                 ),
               ),
@@ -361,20 +346,28 @@ class _ClientFormState extends State<ClientForm> {
 
   void _handleAddClient() {
     if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save(); // Save form state
+      _formKey.currentState!.save();
 
-      Logger().i('Organization Name: $_organizationName');
-      Logger().i('Client Name: $_clientName');
-      Logger().i('Contact Number: $_contactNumber');
-      Logger().i('Latitude: $_latitude');
-      Logger().i('Longitude: $_longitude');
+      // Logger().i('Organization Name: $_organizationName');
+      // Logger().i('Client Name: $_clientName');
+      // Logger().i('Contact Number: $_contactNumber');
+      // Logger().i('Latitude: $_latitude');
+      // Logger().i('Longitude: $_longitude');
 
-      createNewClient();
+      if (widget.client != null) {
+        // Update existing client logic
+        updateClient(widget.client!);
+      } else {
+        // Create new client logic
+        createNewClient();
+      }
     }
   }
 
   void createNewClient() async {
-    isLoading = true;
+    setState(() {
+      isLoading = true;
+    });
 
     Client newClient = Client(
       organizationName: _organizationName!,
@@ -382,33 +375,33 @@ class _ClientFormState extends State<ClientForm> {
       latitude: _latitude,
       longitude: _longitude,
       phoneNo: _contactNumber,
-      addedByEmployeeId: 1, //TokenManager.empId,
-      status: 'not verified', // Default status set to 'not verified'
-      creditLimit: 30000.0, // Default credit limit set to 0
-      creditPeriod: 90, // Default credit period set to 90
-      routeId: 1, // Default route ID set to 1
+      addedByEmployeeId: 1,
+      status: 'not verified',
+      creditLimit: 30000.0,
+      creditPeriod: 90,
+      routeId: 1,
       discount: 1.0,
     );
 
-    // Now send this data to your server
-    //clientService.postClientData(newClient);
     var result = await clientService.postClientData(newClient);
-    //await Future.delayed(Duration(seconds: 1));
-    isLoading = false; // Turn off loading indicator after the request
+
+    setState(() {
+      isLoading = false;
+    });
 
     if (result['success']) {
       AwesomeDialog(
         context: context,
-        dialogType: DialogType.success, // Changed to DialogType.SUCCES
+        dialogType: DialogType.success,
         animType: AnimType.bottomSlide,
-        title: 'Success', // Changed title to Success
-        desc:
-            'Client successfully created', // Changed message to a success notification
+        title: 'Success',
+        desc: 'Client successfully created',
         btnOkText: 'OK',
         btnOkOnPress: () {
-          // Navigate to dashboard after clicking OK
-          Navigator.push(context,
-              MaterialPageRoute(builder: (context) => const UserDashboard()));
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const UserDashboard()),
+          );
         },
       ).show();
     } else {
@@ -416,10 +409,60 @@ class _ClientFormState extends State<ClientForm> {
         context,
         DialogType.error,
         'Error',
-        result['message'] ??
-            'An unknown error occurred.', // Default message if none provided
+        result['message'] ?? 'An unknown error occurred.',
       );
+    }
+  }
+
+  void updateClient(Client client) async {
+    setState(() {
+      isLoading = true;
+    });
+    String phoneAsString = _contactNumber.toString();
+    double? latitude = _latitude ?? client.latitude;
+    double? longitude = _longitude ?? client.longitude;
+    Map<String, dynamic> clientData = {
+      'organization_name': _organizationName!,
+      'name': _clientName!,
+      'latitude': latitude,
+      'longitude': longitude,
+      'phone_no': phoneAsString,
+      'route_id': client.routeId,
+      'discount': client.discount,
+      'credit_limit': client.creditLimit,
+      'credit_period': client.creditPeriod,
+      'added_by_employee_id': client.addedByEmployeeId,
+    };
+
+    var result = await clientService.updateClient(client.clientId, clientData);
+
+    setState(() {
       isLoading = false;
+    });
+
+    if (result['success']) {
+      AwesomeDialog(
+        context: context,
+        dialogType: DialogType.success,
+        animType: AnimType.bottomSlide,
+        title: 'Success',
+        desc: 'Client successfully updated',
+        btnOkText: 'OK',
+        btnOkOnPress: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const UserDashboard()),
+          );
+        },
+      ).show();
+    } else {
+      Logger().e("Update Failed: ${result['message']}");
+      AleartBox.showAleart(
+        context,
+        DialogType.error,
+        'Error',
+        result['message'] ?? 'An unknown error occurred.',
+      );
     }
   }
 }

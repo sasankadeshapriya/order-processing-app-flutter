@@ -6,11 +6,15 @@ import '../../models/clients_modle.dart';
 class ClientCard extends StatefulWidget {
   final Client client;
   final VoidCallback onPressed;
+  final VoidCallback onEdit;
+  final VoidCallback onRemove;
 
   const ClientCard({
     super.key,
     required this.client,
     required this.onPressed,
+    required this.onEdit,
+    required this.onRemove,
   });
 
   @override
@@ -19,11 +23,17 @@ class ClientCard extends StatefulWidget {
 
 class _ClientCardState extends State<ClientCard> {
   bool _isPressed = false;
+  Offset _tapPosition = Offset.zero;
+
+  void _storePosition(TapDownDetails details) {
+    _tapPosition = details.globalPosition;
+  }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTapDown: (_) {
+      onTapDown: (details) {
+        _storePosition(details);
         setState(() {
           _isPressed = true;
         });
@@ -38,6 +48,33 @@ class _ClientCardState extends State<ClientCard> {
         setState(() {
           _isPressed = false;
         });
+      },
+      onLongPress: () {
+        final RenderBox overlay =
+            Overlay.of(context)!.context.findRenderObject() as RenderBox;
+        showMenu(
+          context: context,
+          position: RelativeRect.fromRect(
+            _tapPosition & const Size(40, 40), // smaller rect, the tap position
+            Offset.zero & overlay.size, // Bigger rect, the entire screen
+          ),
+          items: [
+            PopupMenuItem(
+              child: ListTile(
+                leading: Icon(Icons.edit),
+                title: Text('Edit'),
+                onTap: widget.onEdit,
+              ),
+            ),
+            PopupMenuItem(
+              child: ListTile(
+                leading: Icon(Icons.delete),
+                title: Text('Remove'),
+                onTap: widget.onRemove,
+              ),
+            ),
+          ],
+        );
       },
       child: Container(
         margin: const EdgeInsets.only(left: 8, right: 8),
@@ -100,23 +137,20 @@ class _ClientCardState extends State<ClientCard> {
                       ),
                     ],
                   ),
-
-                  //const SizedBox(height: 2),
                   Text(
                     widget.client.name ?? 'Unknown',
                     style: const TextStyle(
                       color: Color(0xFFA3A2A9),
-                      fontSize: 12,
+                      fontSize: 10,
                       fontWeight: FontWeight.w500,
                       fontFamily: 'SF Pro Text',
                     ),
                   ),
-                  //const SizedBox(height: 2),
                   Text(
                     widget.client.phoneNo ?? 'No phone number',
                     style: const TextStyle(
                       color: Color(0xFFA3A2A9),
-                      fontSize: 12,
+                      fontSize: 10,
                       fontWeight: FontWeight.w500,
                       fontFamily: 'SF Pro Text',
                     ),

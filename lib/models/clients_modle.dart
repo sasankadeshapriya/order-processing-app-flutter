@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:logger/logger.dart';
 
 class Client {
   final int clientId;
-  final String? name;
-  final String? organizationName;
+  late final String? name;
+  late final String? organizationName;
   final IconData icon;
   final double discount;
-  final double? latitude;
-  final double? longitude;
-  final String? phoneNo;
+  late final double? latitude;
+  late final double? longitude;
+  late final String? phoneNo;
   final int? addedByEmployeeId;
   final String? status;
   final double? creditLimit;
@@ -37,11 +36,11 @@ class Client {
   });
 
   factory Client.fromJson(Map<String, dynamic> json) {
-    Logger().w('JSON received: $json');
+    // Logger().w('JSON received: $json');
 
     json.forEach((key, value) {
       // Log the field name and its data type
-      Logger().f('$key data type: ${value.runtimeType}');
+      // Logger().f('$key data type: ${value.runtimeType}');
     });
 
     return Client(

@@ -39,7 +39,7 @@ class ClientService {
   //     rethrow;
   //   }
   // }
-
+// Add New Client
   Future<Map<String, dynamic>> postClientData(Client client) async {
     const String apiUrl = '$baseUrl/client';
     try {
@@ -79,6 +79,7 @@ class ClientService {
     }
   }
 
+  //get All client Details
   static Future<List<Client>> getClients() async {
     final response = await http.get(Uri.parse('$baseUrl/client'));
 
@@ -98,6 +99,45 @@ class ClientService {
       Logger()
           .e('Failed to load clients with status code: ${response.statusCode}');
       throw Exception('Failed to load clients');
+    }
+  }
+
+  //Update Existing Client
+  Future<Map<String, dynamic>> updateClient(
+      int clientId, Map<String, dynamic> clientData) async {
+    final String url = '$baseUrl/client/$clientId';
+
+    Logger().i('Request URL: $url');
+    Logger().i('Data being sent: $clientData');
+    clientData.forEach((key, value) {
+      Logger().f('$key type: ${value.runtimeType}');
+    });
+    final response = await http.put(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json',
+        // Add any other headers if necessary, such as authorization tokens
+      },
+      body: jsonEncode(clientData),
+    );
+    Logger().i('Response Status Code: ${response.statusCode}');
+    Logger().i('Response Body: ${response.body}');
+    final decodedBody = jsonDecode(response.body);
+    if (response.statusCode == 200) {
+      Logger().i('Decoded Response Body: $decodedBody');
+      return {
+        'success': true,
+        'message': 'Client updated successfully',
+        'data': jsonDecode(response.body),
+      };
+    } else {
+      Logger().w('Failed to update client: ${decodedBody['message']}');
+
+      return {
+        'success': false,
+        'message': jsonDecode(response.body)['message'],
+        'data': null,
+      };
     }
   }
 }
