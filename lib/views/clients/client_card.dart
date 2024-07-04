@@ -55,22 +55,35 @@ class _ClientCardState extends State<ClientCard> {
         showMenu(
           context: context,
           position: RelativeRect.fromRect(
-            _tapPosition & const Size(40, 40), // smaller rect, the tap position
+            _tapPosition & const Size(40, 40), // Smaller rect, the tap position
             Offset.zero & overlay.size, // Bigger rect, the entire screen
           ),
-          items: [
-            PopupMenuItem(
+          items: <PopupMenuEntry<dynamic>>[
+            // Explicitly declare the list type
+            PopupMenuItem<dynamic>(
+              // Specify the generic type for PopupMenuItem
               child: ListTile(
                 leading: Icon(Icons.edit),
                 title: Text('Edit'),
-                onTap: widget.onEdit,
+                onTap: () {
+                  Navigator.pop(
+                      context); // Close the menu before triggering the action
+                  widget.onEdit();
+                },
               ),
             ),
-            PopupMenuItem(
+            PopupMenuDivider(
+                height: 1), // PopupMenuDivider is already the correct type
+            PopupMenuItem<dynamic>(
+              // Specify the generic type for PopupMenuItem
               child: ListTile(
                 leading: Icon(Icons.delete),
                 title: Text('Remove'),
-                onTap: widget.onRemove,
+                onTap: () {
+                  Navigator.pop(
+                      context); // Close the menu before triggering the action
+                  widget.onRemove();
+                },
               ),
             ),
           ],

@@ -44,7 +44,7 @@ class Client {
     });
 
     return Client(
-      clientId: json['id'] as int ?? 111111111111111111,
+      clientId: json['id'] as int,
       name: json['name'] as String?,
       organizationName: json['organization_name'] as String?,
       icon: Icons.person, // Icons can't be parsed from JSON, use default

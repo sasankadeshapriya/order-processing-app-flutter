@@ -384,7 +384,8 @@ class InvoiceLogic {
         paidAmount: paidAmount,
         balance: outstandingBalance,
         discount: getDiscountAmount(),
-        creditPeriodEndDate: UtilFunctions.getCurrentDateTime(),
+        creditPeriodEndDate:
+            UtilFunctions.getCurrentDateTime(includeTime: true),
         paymentOption: selectedPaymentMethod!.paymentName.toLowerCase(),
         products: invoiceProducts,
       );
