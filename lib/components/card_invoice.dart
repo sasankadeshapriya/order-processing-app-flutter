@@ -4,17 +4,6 @@ import 'package:intl/intl.dart';
 import 'package:order_processing_app/utils/app_colors.dart';
 
 class InvoiceCard extends StatelessWidget {
-  const InvoiceCard({
-    super.key,
-
-    required this.organizationName,
-    required this.createdAt,
-    required this.creditPeriodEndDate,
-    required this.paidAmount,
-    required this.totalAmount,
-    required this.referenceNumber,
-  });
-
   final String organizationName;
   final String createdAt;
   final String creditPeriodEndDate;
@@ -22,8 +11,15 @@ class InvoiceCard extends StatelessWidget {
   final double totalAmount;
   final String referenceNumber;
 
+  const InvoiceCard({
+    super.key,
+    required this.organizationName,
+    required this.createdAt,
+    required this.creditPeriodEndDate,
+    required this.paidAmount,
+    required this.totalAmount,
+    required this.referenceNumber,
   });
-
 
   @override
   Widget build(BuildContext context) {
@@ -43,6 +39,9 @@ class InvoiceCard extends StatelessWidget {
         fullyReceived ? AppColor.successColor : AppColor.processingColor;
 
     return GestureDetector(
+      onTap: () {
+        // Define action on tap if necessary
+      },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 8),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -73,7 +72,7 @@ class InvoiceCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  day, // Placeholder for date
+                  day, // Displaying day
                   style: const TextStyle(
                     color: AppColor.primaryColorLight,
                     fontSize: 24,
@@ -152,7 +151,7 @@ class InvoiceCard extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      endDateFormatted, // Displaying month/day of end date
+                      endDateFormatted, // Displaying formatted end date
                       style: GoogleFonts.poppins(
                         color: AppColor.primaryTextColor,
                         fontSize: 10,

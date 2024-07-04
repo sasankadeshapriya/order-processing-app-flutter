@@ -140,4 +140,38 @@ class ClientService {
       };
     }
   }
+
+  //Deleting Existing Client
+  static Future<Map<String, dynamic>> deleteClient(int clientId) async {
+    final String apiUrl = '$baseUrl/client/$clientId';
+    try {
+      final response = await http.delete(
+        Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          // Include any other headers like authorization tokens if required
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': 'Client deleted successfully',
+        };
+      } else {
+        // Handling unexpected status codes
+        return {
+          'success': false,
+          'message':
+              json.decode(response.body)['message'] ?? 'An error occurred',
+        };
+      }
+    } catch (e) {
+      // Handling exceptions on sending request
+      return {
+        'success': false,
+        'message': e.toString(),
+      };
+    }
+  }
 }

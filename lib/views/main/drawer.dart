@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:order_processing_app/services/connection_check_service.dart';
 import 'package:order_processing_app/services/token_manager.dart';
 import 'package:order_processing_app/utils/app_colors.dart';
 import 'package:order_processing_app/utils/app_components.dart';
@@ -11,6 +10,8 @@ import 'package:order_processing_app/views/clients/client_list.dart';
 import 'package:order_processing_app/views/inventory/product_list.dart';
 import 'package:order_processing_app/views/invoice/invoicePage.dart';
 import 'package:order_processing_app/views/invoice/invoice_list_page.dart';
+
+import '../clients/client_form.dart';
 
 enum DrawerMenu { none, client, invoice, inventory }
 
@@ -156,7 +157,12 @@ class _AppDrawerState extends State<AppDrawer> {
                     DrawerMenu.client,
                     [
                       buildSubMenuItem('Add New Client', () {
-                        // Navigate to Add New Client
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ClientForm(),
+                          ),
+                        );
                       }),
                       buildSubMenuItem('Client List', () {
                         Navigator.push(

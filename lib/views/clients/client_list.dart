@@ -1,3 +1,4 @@
+import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/clients_modle.dart';
@@ -65,29 +66,44 @@ class _ClientListState extends State<ClientList> {
   }
 
   void _removeClient(Client client) {
-    showDialog(
+    // Show confirmation dialog using AwesomeDialog
+    AwesomeDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirm Removal'),
-        content: const Text('Are you sure you want to remove this client?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _clients.remove(client);
-                _filterClients(_searchController.text);
-              });
-              Navigator.of(context).pop();
-            },
-            child: const Text('Remove'),
-          ),
-        ],
-      ),
-    );
+      dialogType: DialogType.question,
+      animType: AnimType.bottomSlide,
+      title: 'Confirm Removal',
+      desc: 'Are you sure you want to remove this client?',
+      btnCancelOnPress: () {},
+      btnOkOnPress: () async {
+        // Call the delete service
+        var result = await ClientService.deleteClient(client.clientId);
+        if (result['success']) {
+          setState(() {
+            _clients.removeWhere((item) => item.clientId == client.clientId);
+            _filterClients(_searchController.text); // Reapply the search filter
+          });
+          // Show success message
+          AwesomeDialog(
+            context: context,
+            dialogType: DialogType.success,
+            animType: AnimType.scale,
+            title: 'Success',
+            desc: 'Client successfully removed',
+            btnOkOnPress: () {},
+          )..show();
+        } else {
+          // Show error message
+          AwesomeDialog(
+            context: context,
+            dialogType: DialogType.error,
+            animType: AnimType.scale,
+            title: 'Error',
+            desc: result['message'],
+            btnOkOnPress: () {},
+          )..show();
+        }
+      },
+    )..show();
   }
 
   void _editClient(Client client) {

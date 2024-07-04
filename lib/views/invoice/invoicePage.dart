@@ -13,6 +13,7 @@ import '../../models/payments_modle.dart';
 import '../../models/product_modle.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/invoice_logic.dart';
+import '../../utils/util_functions.dart';
 import 'print_invoice.dart';
 
 class InvoicePage extends StatefulWidget {
@@ -45,7 +46,8 @@ class _InvoicePageState extends State<InvoicePage> {
   Future<void> fetchProductsAndUpdateUI() async {
     await invoiceLogic.fetchClients();
     // Assuming empId and currentDate are correctly set
-    await invoiceLogic.fetchProductDetails(1, '2024-04-01', context);
+    await invoiceLogic.fetchProductDetails(
+        1, UtilFunctions.getCurrentDateTime(), context);
     Logger()
         .f('Products loaded into dropdown: ${invoiceLogic.productList.length}');
   }

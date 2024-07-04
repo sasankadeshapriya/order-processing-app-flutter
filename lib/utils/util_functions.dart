@@ -6,8 +6,10 @@ class UtilFunctions {
     Navigator.push(context, MaterialPageRoute(builder: (context) => widget));
   }
 
-  static String getCurrentDateTime() {
+  static String getCurrentDateTime({bool includeTime = false}) {
     DateTime now = DateTime.now();
-    return DateFormat('yyyy-MM-dd HH:mm:ss').format(now);
+    // Determine the format based on includeTime
+    String formatString = includeTime ? 'yyyy-MM-dd HH:mm:ss' : 'yyyy-MM-dd';
+    return DateFormat(formatString).format(now);
   }
 }

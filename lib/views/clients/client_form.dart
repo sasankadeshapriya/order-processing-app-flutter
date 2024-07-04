@@ -63,16 +63,13 @@ class _ClientFormState extends State<ClientForm> {
       _contactNumberController.text = widget.client!.phoneNo ?? '';
       _latitude = widget.client!.latitude;
       _longitude = widget.client!.longitude;
-      if (_latitude != null && _longitude != null) {
-        // _locationController.text = 'Lat: $_latitude, Lng: $_longitude';
-      }
 
       // Log client details
-      Logger().i('Organization Name: ${widget.client!.organizationName}');
-      Logger().i('Client Name: ${widget.client!.name}');
-      Logger().i('Contact Number: ${widget.client!.phoneNo}');
-      Logger().i('Latitude: ${widget.client!.latitude}');
-      Logger().i('Longitude: ${widget.client!.longitude}');
+      // Logger().i('Organization Name: ${widget.client!.organizationName}');
+      // Logger().i('Client Name: ${widget.client!.name}');
+      // Logger().i('Contact Number: ${widget.client!.phoneNo}');
+      // Logger().i('Latitude: ${widget.client!.latitude}');
+      // Logger().i('Longitude: ${widget.client!.longitude}');
     }
   }
 
