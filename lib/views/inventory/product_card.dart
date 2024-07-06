@@ -217,7 +217,7 @@ class ProductCard extends StatelessWidget {
                                 'Opening Stock',
                                 style: const TextStyle(
                                   color: Color(0xFFA3A2A9),
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.w500,
                                   fontFamily: 'SF Pro Text',
                                 ),
@@ -245,7 +245,7 @@ class ProductCard extends StatelessWidget {
                                 'Out Stock',
                                 style: const TextStyle(
                                   color: Color(0xFFA3A2A9),
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.w500,
                                   fontFamily: 'SF Pro Text',
                                 ),
@@ -273,7 +273,7 @@ class ProductCard extends StatelessWidget {
                                 'Available Stock',
                                 style: const TextStyle(
                                   color: Color(0xFFA3A2A9),
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.w500,
                                   fontFamily: 'SF Pro Text',
                                 ),

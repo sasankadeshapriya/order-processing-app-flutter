@@ -58,7 +58,7 @@ class InvoiceModle {
 
 class InvoiceProduct {
   final int productId;
-  final int batchId;
+  final String batchId;
   final double quantity;
   final double sum;
 

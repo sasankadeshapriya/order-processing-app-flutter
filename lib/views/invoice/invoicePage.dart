@@ -31,7 +31,6 @@ class _InvoicePageState extends State<InvoicePage> {
   final TextEditingController productController = TextEditingController();
   final TextEditingController paymentController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
-  //String currentDate = DateFormat('yyyy-MM-dd').format(DateTime.now()); // To store current date
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool showPaymentFields = false;

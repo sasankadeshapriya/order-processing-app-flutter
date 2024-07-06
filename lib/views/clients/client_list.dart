@@ -66,7 +66,6 @@ class _ClientListState extends State<ClientList> {
   }
 
   void _removeClient(Client client) {
-    // Show confirmation dialog using AwesomeDialog
     AwesomeDialog(
       context: context,
       dialogType: DialogType.question,
@@ -75,14 +74,12 @@ class _ClientListState extends State<ClientList> {
       desc: 'Are you sure you want to remove this client?',
       btnCancelOnPress: () {},
       btnOkOnPress: () async {
-        // Call the delete service
         var result = await ClientService.deleteClient(client.clientId);
         if (result['success']) {
           setState(() {
             _clients.removeWhere((item) => item.clientId == client.clientId);
-            _filterClients(_searchController.text); // Reapply the search filter
+            _filterClients(_searchController.text);
           });
-          // Show success message
           AwesomeDialog(
             context: context,
             dialogType: DialogType.success,
@@ -92,7 +89,6 @@ class _ClientListState extends State<ClientList> {
             btnOkOnPress: () {},
           )..show();
         } else {
-          // Show error message
           AwesomeDialog(
             context: context,
             dialogType: DialogType.error,
@@ -200,24 +196,28 @@ class _ClientListState extends State<ClientList> {
 
                 return Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: ListView.builder(
-                    itemCount: _filteredClients.length,
-                    itemBuilder: (context, index) {
-                      final client = _filteredClients[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 4.0,
-                        ),
-                        child: ClientCard(
-                          client: client,
-                          onPressed: () {
-                            // Handle the card press action
-                          },
-                          onEdit: () => _editClient(client),
-                          onRemove: () => _removeClient(client),
-                        ),
-                      );
-                    },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: AppColor.primaryTextColor,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: ListView.builder(
+                      itemCount: _filteredClients.length,
+                      itemBuilder: (context, index) {
+                        final client = _filteredClients[index];
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 5),
+                          child: ClientCard(
+                            client: client,
+                            onPressed: () {},
+                            onEdit: () => _editClient(client),
+                            onRemove: () => _removeClient(client),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 );
               },

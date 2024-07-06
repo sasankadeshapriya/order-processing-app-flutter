@@ -663,25 +663,29 @@ class _UserDashboardState extends State<UserDashboard>
               SizedBox(
                 height: 60,
                 child: Padding(
-                  padding: const EdgeInsets.only(left: 12, top: 6),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
                     children: [
-                      const Text(
-                        "Welcome back",
-                        style: TextStyle(
-                            fontWeight: FontWeight.w500,
-                            letterSpacing: 1,
-                            fontFamily: "PublicSansMedium",
-                            fontSize: 12,
-                            color: AppColor.placeholderTextColor),
+                      const Icon(
+                        Icons.person,
+                        size: 30,
+                        color: AppColor.accentColor,
                       ),
-                      Row(
+                      SizedBox(width: 15),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          const Icon(
-                            Icons.person,
-                            size: 18,
-                            color: AppColor.accentColor,
+                          Expanded(
+                            child: const Text(
+                              "Welcome back",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  letterSpacing: 1,
+                                  fontFamily: "PublicSansMedium",
+                                  fontSize: 12,
+                                  color: AppColor.placeholderTextColor),
+                            ),
                           ),
                           const SizedBox(width: 5),
                           Text(
@@ -720,6 +724,8 @@ class _UserDashboardState extends State<UserDashboard>
                       ),
                       const SizedBox(width: 12),
                       Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           const Expanded(
                             child: Text(

@@ -370,7 +370,7 @@ class InvoiceLogic {
       final invoiceProducts = processedProducts.map((processedProduct) {
         return InvoiceProduct(
           productId: processedProduct.product.id,
-          batchId: int.tryParse(processedProduct.product.sku) ?? 0,
+          batchId: processedProduct.product.sku,
           quantity: processedProduct.quantity,
           sum: processedProduct.sum,
         );
