@@ -101,7 +101,7 @@ class _PrintInvoiceState extends State<PrintInvoice> {
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         appBar: AppBar(
-          backgroundColor: AppColor.accentColor,
+          backgroundColor: AppColor.backgroundColor,
           title: const Text(
             'Print Receipt',
             style: TextStyle(

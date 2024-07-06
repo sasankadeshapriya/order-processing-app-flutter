@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../models/clients_modle.dart';
+import '../../services/invoice_api_service.dart';
 
 class ClientCard extends StatefulWidget {
   final Client client;
@@ -150,23 +151,66 @@ class _ClientCardState extends State<ClientCard> {
                       ),
                     ],
                   ),
-                  Text(
-                    widget.client.name ?? 'Unknown',
-                    style: const TextStyle(
-                      color: Color(0xFFA3A2A9),
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500,
-                      fontFamily: 'SF Pro Text',
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        widget.client.name ?? 'Unknown',
+                        style: const TextStyle(
+                          color: Color(0xFFA3A2A9),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                          fontFamily: 'SF Pro Text',
+                        ),
+                      ),
+                      Text(
+                        'Balance',
+                        style: const TextStyle(
+                          color: Color(0xFFA3A2A9),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                          fontFamily: 'SF Pro Text',
+                        ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    widget.client.phoneNo ?? 'No phone number',
-                    style: const TextStyle(
-                      color: Color(0xFFA3A2A9),
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500,
-                      fontFamily: 'SF Pro Text',
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        widget.client.phoneNo ?? 'No phone number',
+                        style: const TextStyle(
+                          color: Color(0xFFA3A2A9),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                          fontFamily: 'SF Pro Text',
+                        ),
+                      ),
+                      FutureBuilder<double>(
+                        future: InvoiceService.getClientBalance(widget.client
+                            .clientId), // Assuming this method is implemented
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return Text('Loading...',
+                                style: const TextStyle(fontSize: 10));
+                          } else if (snapshot.hasError) {
+                            return Text('Error: ${snapshot.error}',
+                                style: const TextStyle(fontSize: 10));
+                          }
+
+                          // Check if snapshot has data and it's not null before calling toStringAsFixed
+                          if (snapshot.hasData) {
+                            return Text(
+                                'LKR: ${snapshot.data!.toStringAsFixed(2)}',
+                                style: const TextStyle(fontSize: 10));
+                          } else {
+                            return Text('Balance: unavailable',
+                                style: const TextStyle(fontSize: 10));
+                          }
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),

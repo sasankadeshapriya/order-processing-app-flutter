@@ -5,7 +5,8 @@ import '../../models/product_modle.dart';
 import '../../models/product_response.dart';
 import '../../services/product_api_service.dart';
 import '../../utils/app_colors.dart';
-import 'product_card.dart'; // Import your ProductCard and ProductForm widget
+import '../../utils/util_functions.dart';
+import 'product_card.dart'; // Make sure the path is correct for ProductCard
 
 class ProductList extends StatefulWidget {
   const ProductList({Key? key}) : super(key: key);
@@ -23,13 +24,12 @@ class _ProductListState extends State<ProductList> {
   List<Product> _filteredProducts = [];
   List<Product> _searchSuggestions = [];
   late int empId = 1;
-  String currentDate = '2024-04-01';
+  String currentDate = UtilFunctions.getCurrentDateTime();
 
   @override
   void initState() {
     super.initState();
-    futureProducts = ProductService.fetchProducts(
-        empId, currentDate); // Use the function here
+    futureProducts = ProductService.fetchProducts(empId, currentDate);
   }
 
   void _onSortOrderChanged() {
@@ -80,7 +80,7 @@ class _ProductListState extends State<ProductList> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: AppColor.accentColor,
+        backgroundColor: AppColor.backgroundColor,
         leading: Padding(
           padding: const EdgeInsets.only(left: 16),
           child: IconButton(
@@ -165,48 +165,54 @@ class _ProductListState extends State<ProductList> {
 
                 return Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: ListView.builder(
-                    itemCount: _filteredProducts.length,
-                    itemBuilder: (context, index) {
-                      final product = _filteredProducts[index];
-                      return FutureBuilder<double>(
-                        future: ProductService.getOpeningStock(
-                            product.id, currentDate),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Center(
-                                child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                  AppColor.accentColor),
-                            ));
-                          } else if (snapshot.hasError) {
-                            return const Center(
-                                child: Text('Failed to load opening stock'));
-                          } else {
-                            final openingStock = snapshot.data ?? 0.0;
-                            return Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 4.0),
-                              child: ProductCard(
-                                product: product,
-                                openingStock: openingStock,
-                                onPressed: () {
-                                  // Handle the card press action
-                                },
-                              ),
-                            );
-                          }
-                        },
-                      );
-                    },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: AppColor
+                          .primaryTextColor, // Adjust the color as needed
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: ListView.builder(
+                      itemCount: _filteredProducts.length,
+                      itemBuilder: (context, index) {
+                        final product = _filteredProducts[index];
+                        return FutureBuilder<double>(
+                          future: ProductService.getOpeningStock(
+                              product.id, currentDate),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            } else if (snapshot.hasError) {
+                              return const Center(
+                                  child: Text('Failed to load opening stock'));
+                            } else {
+                              final openingStock = snapshot.data ?? 0.0;
+                              return Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 4.0),
+                                child: ProductCard(
+                                  product: product,
+                                  openingStock: openingStock,
+                                  onPressed: () {
+                                    // Handle the card press action
+                                  },
+                                ),
+                              );
+                            }
+                          },
+                        );
+                      },
+                    ),
                   ),
                 );
               },
             ),
           ),
           Positioned(
-            bottom: 16,
+            bottom: 8,
             left: 8,
             right: 8,
             child: CustomButton(

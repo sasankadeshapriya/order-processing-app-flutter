@@ -372,11 +372,11 @@ class _ClientFormState extends State<ClientForm> {
       latitude: _latitude,
       longitude: _longitude,
       phoneNo: _contactNumber,
-      addedByEmployeeId: 1,
+      addedByEmployeeId: 3, // change hard code values
       status: 'not verified',
       creditLimit: 30000.0,
       creditPeriod: 90,
-      routeId: 1,
+      routeId: 3, // change hard code values
       discount: 1.0,
     );
 
