@@ -1,10 +1,50 @@
 // CommissionService.dart
-import 'package:http/http.dart' as http;
-import 'package:order_processing_app/models/commission_modle.dart';
 import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
+import 'package:order_processing_app/models/commission_modle.dart';
 
 class CommissionService {
   static const String baseUrl = 'http://api.gsutil.xyz';
+
+  static Future<CommissionModel> addCommission(
+      int empId, String date, double commissionAmount) async {
+    final url = '$baseUrl/commission/add';
+    final String requestBody = jsonEncode(<String, dynamic>{
+      'emp_id': empId,
+      'date': date,
+      'commission': commissionAmount,
+    });
+
+    // Log the request data for debugging
+    Logger().f('Preparing to send POST request to $url');
+    Logger().f('Request Body: $requestBody');
+
+    final response = await http.post(
+      Uri.parse(url),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: requestBody,
+    );
+
+    // Log the response status and body for debugging
+    Logger().f('Received response with status code: ${response.statusCode}');
+    Logger().f('Response Body: ${response.body}');
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final jsonData = jsonDecode(response.body);
+      return CommissionModel.fromJson(jsonData['commission']);
+    } else {
+      // Log error before throwing
+      Logger().w(
+          'Failed to add/update commission. Status code: ${response.statusCode}');
+      Logger().w('Response Body: ${response.body}');
+      throw Exception(
+          'Failed to add/update commission. Status code: ${response.statusCode}');
+    }
+  }
 
   static Future<List<CommissionModel>> getCommissionsByEmpId(int empId) async {
     final url = '$baseUrl/commission/emp/$empId';

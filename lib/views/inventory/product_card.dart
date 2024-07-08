@@ -6,13 +6,13 @@ import '../../models/product_modle.dart';
 class ProductCard extends StatelessWidget {
   final Product product;
   final VoidCallback onPressed;
-  final double openingStock;
+  //final double openingStock;
 
   const ProductCard({
     Key? key,
     required this.product,
     required this.onPressed,
-    required this.openingStock,
+    // required this.openingStock,
   }) : super(key: key);
 
   @override
@@ -223,7 +223,7 @@ class ProductCard extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                '${openingStock.toStringAsFixed(2)}',
+                                '${product.intialqty.toStringAsFixed(2)}',
                                 style: const TextStyle(
                                   color: Color(0xFFA3A2A9),
                                   fontSize: 12,
@@ -251,7 +251,7 @@ class ProductCard extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                '${calculateOutStock(openingStock, product.quantity).toStringAsFixed(2)}',
+                                '${calculateOutStock(product.intialqty, product.quantity).toStringAsFixed(2)}',
                                 style: const TextStyle(
                                   color: Color(0xFFA3A2A9),
                                   fontSize: 12,
@@ -302,7 +302,7 @@ class ProductCard extends StatelessWidget {
     );
   }
 
-  double calculateOutStock(double openingStock, double availableStock) {
-    return openingStock - availableStock;
+  double calculateOutStock(double intialqty, double availableStock) {
+    return intialqty - availableStock;
   }
 }

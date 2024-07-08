@@ -1,12 +1,14 @@
+import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 
 import '../../components/custom_button.dart';
 import '../../models/product_modle.dart';
 import '../../models/product_response.dart';
 import '../../services/product_api_service.dart';
+import '../../services/vehicle_inventory_service.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/util_functions.dart';
-import 'product_card.dart'; // Make sure the path is correct for ProductCard
+import 'product_card.dart';
 
 class ProductList extends StatefulWidget {
   const ProductList({Key? key}) : super(key: key);
@@ -18,18 +20,20 @@ class ProductList extends StatefulWidget {
 class _ProductListState extends State<ProductList> {
   late Future<ProductResponse> futureProducts;
   bool _isAscending = true;
+  bool isLoading = false;
   TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
   List<Product> _products = [];
   List<Product> _filteredProducts = [];
-  List<Product> _searchSuggestions = [];
-  late int empId = 1;
-  String currentDate = UtilFunctions.getCurrentDateTime();
+  late VehicleInventoryService vehicleInventoryService;
 
   @override
   void initState() {
     super.initState();
+    int empId = 1; // This could be dynamically assigned as needed
+    String currentDate = UtilFunctions.getCurrentDateTime();
     futureProducts = ProductService.fetchProducts(empId, currentDate);
+    vehicleInventoryService = VehicleInventoryService();
   }
 
   void _onSortOrderChanged() {
@@ -53,7 +57,6 @@ class _ProductListState extends State<ProductList> {
     setState(() {
       _isSearching = false;
       _searchController.clear();
-      _searchSuggestions.clear();
       _filterProducts('');
     });
   }
@@ -69,11 +72,55 @@ class _ProductListState extends State<ProductList> {
       return product.name.toLowerCase().contains(value.toLowerCase()) ||
           product.productCode.toLowerCase().contains(value.toLowerCase());
     }).toList();
-    _filteredProducts.sort((a, b) {
-      return _isAscending
-          ? a.name.toLowerCase().compareTo(b.name.toLowerCase())
-          : b.name.toLowerCase().compareTo(a.name.toLowerCase());
-    });
+    if (!_isAscending) {
+      _filteredProducts = _filteredProducts.reversed.toList();
+    }
+  }
+
+  Future<void> deleteAllVehicleInventories() async {
+    var response = await futureProducts; // Ensure future completes
+    List<Product> products = response.products;
+    bool allDeleted = true;
+
+    for (var product in products) {
+      var result = await vehicleInventoryService
+          .deleteVehicleInventory(product.vehicleInventoryId);
+      if (!result['success']) {
+        allDeleted = false;
+        break; // Stop further deletion if one fails
+      }
+    }
+
+    if (allDeleted) {
+      setState(() {
+        _products.clear(); // Assuming you want to clear the list after deletion
+        isLoading = false;
+      });
+      showSuccessMessage();
+    } else {
+      setState(() {
+        isLoading = false;
+      });
+      showErrorSnackbar();
+    }
+  }
+
+  void showSuccessMessage() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("All vehicle inventories successfully returned."),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  void showErrorSnackbar() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Failed to return some vehicle inventories."),
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   @override
@@ -81,23 +128,18 @@ class _ProductListState extends State<ProductList> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColor.backgroundColor,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 16),
-          child: IconButton(
-            icon: const Icon(
-              Icons.arrow_back_ios_rounded,
-              color: AppColor.primaryTextColor,
-              size: 15,
-            ),
-            onPressed: () {
-              Navigator.pop(context);
-            },
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_rounded,
+            color: AppColor.primaryTextColor,
+            size: 15,
           ),
+          onPressed: () => Navigator.pop(context),
         ),
         title: _isSearching
             ? TextField(
                 controller: _searchController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   hintText: 'Search products...',
                   border: InputBorder.none,
                 ),
@@ -118,7 +160,6 @@ class _ProductListState extends State<ProductList> {
             IconButton(
               icon: Icon(
                 _isAscending ? Icons.arrow_upward : Icons.arrow_downward,
-                size: 24,
                 color: AppColor.primaryTextColor,
               ),
               onPressed: _onSortOrderChanged,
@@ -126,7 +167,6 @@ class _ProductListState extends State<ProductList> {
           IconButton(
             icon: Icon(
               _isSearching ? Icons.close : Icons.search,
-              size: 24,
               color: AppColor.primaryTextColor,
             ),
             onPressed: () {
@@ -153,59 +193,40 @@ class _ProductListState extends State<ProductList> {
                     valueColor:
                         AlwaysStoppedAnimation<Color>(AppColor.accentColor),
                   ));
-                } else if (snapshot.hasError) {
+                }
+                if (snapshot.hasError) {
                   return const Center(child: Text('Failed to load products'));
-                } else if (!snapshot.hasData ||
-                    snapshot.data!.products.isEmpty) {
+                }
+                if (!snapshot.hasData || snapshot.data!.products.isEmpty) {
                   return const Center(child: Text('No products available'));
                 }
 
                 _products = snapshot.data!.products;
                 _filterProducts(_searchController.text);
 
-                return Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    margin: const EdgeInsets.symmetric(horizontal: 8),
-                    decoration: BoxDecoration(
-                      color: AppColor
-                          .primaryTextColor, // Adjust the color as needed
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: ListView.builder(
-                      itemCount: _filteredProducts.length,
-                      itemBuilder: (context, index) {
-                        final product = _filteredProducts[index];
-                        return FutureBuilder<double>(
-                          future: ProductService.getOpeningStock(
-                              product.id, currentDate),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return const Center(
-                                  child: CircularProgressIndicator());
-                            } else if (snapshot.hasError) {
-                              return const Center(
-                                  child: Text('Failed to load opening stock'));
-                            } else {
-                              final openingStock = snapshot.data ?? 0.0;
-                              return Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 4.0),
-                                child: ProductCard(
-                                  product: product,
-                                  openingStock: openingStock,
-                                  onPressed: () {
-                                    // Handle the card press action
-                                  },
-                                ),
-                              );
-                            }
+                return Container(
+                  padding: const EdgeInsets.only(top: 12, bottom: 12),
+                  margin: const EdgeInsets.only(left: 8, right: 8, bottom: 4),
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: AppColor.primaryTextColor,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: ListView.builder(
+                    itemCount: _filteredProducts.length,
+                    itemBuilder: (context, index) {
+                      final product = _filteredProducts[index];
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 5),
+                        child: ProductCard(
+                          product: product,
+                          onPressed: () {
+                            // Handle the card press action
+                            print('Product pressed: ${product.name}');
                           },
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    },
                   ),
                 );
               },
@@ -218,11 +239,24 @@ class _ProductListState extends State<ProductList> {
             child: CustomButton(
               buttonText: 'Return Stock',
               onTap: () {
-                // Implement your logic here
-                print('Return Stock button pressed');
+                AwesomeDialog(
+                  context: context,
+                  dialogType: DialogType.warning,
+                  animType: AnimType.bottomSlide,
+                  title: 'Return Stock',
+                  desc: 'Are you sure you want to return all stock?',
+                  btnCancelOnPress: () {},
+                  btnOkOnPress: () {
+                    setState(() {
+                      isLoading = true;
+                    });
+
+                    deleteAllVehicleInventories();
+                  },
+                )..show();
               },
               buttonColor: AppColor.accentColor,
-              isLoading: false,
+              isLoading: isLoading,
             ),
           ),
         ],

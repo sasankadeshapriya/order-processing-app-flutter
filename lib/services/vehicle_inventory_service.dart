@@ -54,4 +54,43 @@ class VehicleInventoryService {
       return false;
     }
   }
+
+  Future<Map<String, dynamic>> deleteVehicleInventory(int inventoryId) async {
+    Logger().i('Attempting to delete vehicle inventory with ID: $inventoryId');
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/vehicle-inventory/$inventoryId'),
+        headers: {
+          'Content-Type': 'application/json',
+          // Add other headers like authorization if needed
+        },
+      );
+
+      Logger().i(
+          'Received HTTP status code: ${response.statusCode} for inventory ID: $inventoryId');
+
+      if (response.statusCode == 200) {
+        Logger()
+            .i('Successfully deleted vehicle inventory with ID: $inventoryId');
+        return {
+          'success': true,
+          'message': 'Vehicle inventory deleted successfully',
+        };
+      } else {
+        Logger().i(
+            'Failed to delete vehicle inventory with ID: $inventoryId. Response: ${response.body}');
+        return {
+          'success': false,
+          'message': 'Failed to delete vehicle inventory: ${response.body}'
+        };
+      }
+    } catch (e) {
+      Logger().i(
+          'Error occurred while deleting vehicle inventory with ID: $inventoryId: $e');
+      return {
+        'success': false,
+        'message': 'An error occurred while deleting vehicle inventory: $e'
+      };
+    }
+  }
 }
