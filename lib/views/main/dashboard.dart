@@ -1,4 +1,3 @@
-import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -13,11 +12,11 @@ import 'package:order_processing_app/views/main/drawer.dart';
 import 'package:order_processing_app/views/map/map_page.dart';
 import 'package:order_processing_app/views/reports/report_list_page.dart';
 
-import '../../components/alert_dialog.dart';
 import '../clients/client_form.dart';
 import '../inventory/product_list.dart';
 import '../invoice/invoicePage.dart';
 import '../invoice/invoice_list_page.dart';
+import '../payments/payment_list.dart';
 
 class UserDashboard extends StatefulWidget {
   const UserDashboard({super.key});
@@ -204,11 +203,11 @@ class _UserDashboardState extends State<UserDashboard>
                       text2: "",
                       onTap: () {
                         print("Tapped Payments");
-                        AleartBox.showAleart(
+                        Navigator.push(
                           context,
-                          DialogType.info,
-                          'Under development',
-                          'This section Under development. Sorry for the inconvenience.',
+                          MaterialPageRoute(
+                            builder: (context) => const PaymentList(),
+                          ),
                         );
                       },
                     ),
@@ -365,7 +364,12 @@ class _UserDashboardState extends State<UserDashboard>
                             text1: "",
                             text2: "",
                             onTap: () {
-                              print("Tapped Payments");
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const PaymentList(),
+                                ),
+                              );
                             },
                           ),
                         ),
@@ -377,7 +381,12 @@ class _UserDashboardState extends State<UserDashboard>
                             text1: "",
                             text2: "",
                             onTap: () {
-                              print("Tapped Clients");
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const ClientForm(),
+                                ),
+                              );
                             },
                           ),
                         ),
@@ -539,7 +548,12 @@ class _UserDashboardState extends State<UserDashboard>
                             text1: "",
                             text2: "",
                             onTap: () {
-                              print("Tapped Clients");
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const ClientForm(),
+                                ),
+                              );
                             },
                           ),
                         ),
