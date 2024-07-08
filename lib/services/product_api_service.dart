@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/product_modle.dart';
 import '../models/product_response.dart'; // Ensure you have the correct import path
@@ -36,36 +35,33 @@ class ProductService {
             final batches = productData['Batches'];
             final firstBatch = batches.isNotEmpty ? batches.first : {};
 
-            final quantityString = vehicle['quantity'] as String? ?? '0.0';
-            final quantity = double.tryParse(quantityString) ?? 0.0;
-
             Logger().w('Processing product: ${productData['name']}');
 
             return Product(
-              employeeName: employeeName,
-              id: productData['id'],
-              name: productData['name'],
-              sku: vehicle['sku'],
-              productCode: productData['product_code'],
-              measurementUnit: productData['measurement_unit'],
-              description: productData['description'],
-              productImage: productData['product_image'],
-              cashPrice:
-                  double.tryParse(firstBatch['cash_price'].toString()) ?? 0.0,
-              checkPrice:
-                  double.tryParse(firstBatch['check_price'].toString()) ?? 0.0,
-              creditPrice:
-                  double.tryParse(firstBatch['credit_price'].toString()) ?? 0.0,
-              assignmentId: vehicle['assignment_id'],
-              quantity: quantity,
-              vehicleInventoryId: vehicle['id'],
-            );
+                employeeName: employeeName,
+                id: productData['id'],
+                name: productData['name'],
+                sku: vehicle['sku'],
+                productCode: productData['product_code'],
+                measurementUnit: productData['measurement_unit'],
+                description: productData['description'],
+                productImage: productData['product_image'],
+                cashPrice:
+                    double.tryParse(firstBatch['cash_price'].toString()) ?? 0.0,
+                checkPrice:
+                    double.tryParse(firstBatch['check_price'].toString()) ??
+                        0.0,
+                creditPrice:
+                    double.tryParse(firstBatch['credit_price'].toString()) ??
+                        0.0,
+                assignmentId: vehicle['assignment_id'],
+                quantity:
+                    double.tryParse(vehicle['quantity'].toString()) ?? 0.0,
+                vehicleInventoryId: vehicle['id'],
+                intialqty: double.tryParse(vehicle['intialqty'].toString()) ??
+                    0.0 // New column added here
+                );
           }).toList();
-
-          // Store the opening stock value for each product using shared preferences
-          for (var product in products) {
-            await storeOpeningStock(product, currentDate);
-          }
 
           Logger().w('Successfully processed ${products.length} products');
           return ProductResponse(
@@ -82,28 +78,5 @@ class ProductService {
       Logger().e('Error fetching products: $error');
       rethrow;
     }
-  }
-
-  static Future<void> storeOpeningStock(
-      Product product, String currentDate) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String key = 'opening_stock_${product.id}_$currentDate';
-
-    if (!prefs.containsKey(key)) {
-      await prefs.setDouble(key, product.quantity);
-      Logger().w(
-          'Opening stock value stored successfully for product ${product.name}');
-    } else {
-      Logger().w(
-          'Opening stock value already exists for product ${product.name} on date $currentDate');
-    }
-  }
-
-  static Future<double> getOpeningStock(
-      int productId, String currentDate) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String key = 'opening_stock_${productId}_$currentDate';
-
-    return prefs.getDouble(key) ?? 0.0;
   }
 }

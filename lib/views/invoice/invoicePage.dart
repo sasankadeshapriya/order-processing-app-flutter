@@ -43,7 +43,7 @@ class _InvoicePageState extends State<InvoicePage> {
   }
 
   Future<void> fetchProductsAndUpdateUI() async {
-    await invoiceLogic.fetchClients();
+    await invoiceLogic.fetchClients(context);
     // Assuming empId and currentDate are correctly set
     await invoiceLogic.fetchProductDetails(
         1, UtilFunctions.getCurrentDateTime(), context);

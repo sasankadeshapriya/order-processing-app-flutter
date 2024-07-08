@@ -12,6 +12,7 @@ import '../models/product_modle.dart';
 import '../models/product_response.dart';
 import '../models/vehicle_inventory_modle.dart';
 import '../services/client_api_service.dart';
+import '../services/commission_api_service.dart';
 import '../services/invoice_api_service.dart';
 import '../services/product_api_service.dart';
 import '../services/vehicle_inventory_service.dart';
@@ -117,12 +118,50 @@ class InvoiceLogic {
     }
   }
 
-  Future<void> fetchClients() async {
+  Future<void> fetchClients(BuildContext context) async {
     try {
       final clientData = await ClientService.getClients();
       clients = clientData;
     } catch (error) {
       Logger().e('Error fetching clients: $error');
+
+      // User-friendly error message initialization
+      String userFriendlyMessage =
+          "We're having trouble loading client information right now.";
+
+      // Determine a user-friendly message based on the error type
+      if (error.toString().contains('TimeoutException')) {
+        userFriendlyMessage =
+            "Connection timed out. Please check your internet connection and try again.";
+      } else if (error.toString().contains('SocketException')) {
+        userFriendlyMessage =
+            "Unable to connect. Please check your network settings.";
+      } else if (error.toString().contains('HttpException')) {
+        userFriendlyMessage =
+            "Trouble connecting to the server. Please try again later.";
+      } else {
+        userFriendlyMessage =
+            "An unexpected error occurred. Please try again later.";
+      }
+
+      // Optionally, use a dialog to communicate the error to the user
+      if (context != null) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text('Error'),
+            content: Text(userFriendlyMessage),
+            actions: <Widget>[
+              TextButton(
+                child: Text('OK'),
+                onPressed: () {
+                  Navigator.of(ctx).pop(); // Close the dialog
+                },
+              ),
+            ],
+          ),
+        );
+      }
     }
   }
 
@@ -136,12 +175,27 @@ class InvoiceLogic {
       // Now you can use productList and employeeName in your logic
     } catch (error) {
       Logger().e('Error fetching product details: $error');
-      // Show Awesome Dialog with error message
+
+      // Determine a user-friendly message based on the type of error
+      String userFriendlyMessage =
+          "We're unable to load the products at this moment.";
+      if (error.toString().contains('TimeoutException')) {
+        userFriendlyMessage =
+            "Connection timed out. Please check your internet connection and try again.";
+      } else if (error.toString().contains('SocketException')) {
+        userFriendlyMessage =
+            "Unable to connect. Please check your network settings.";
+      } else if (error.toString().contains('HttpException')) {
+        userFriendlyMessage =
+            "Trouble connecting to the server. Please try again later.";
+      }
+
+      // Show Awesome Dialog with a user-friendly error message
       AwesomeDialog(
         context: context,
         dialogType: DialogType.error,
-        title: 'Failed to fetch products',
-        desc: 'Error: $error',
+        title: 'Failed to Load Products',
+        desc: userFriendlyMessage,
         btnOkOnPress: () {},
       ).show();
     }
@@ -203,13 +257,39 @@ class InvoiceLogic {
     }
   }
 
+  // double getTotalBillAmount() {
+  //   return productQuantities.entries.fold(0.0, (total, entry) {
+  //     final product = entry.key;
+  //     final quantity = entry.value;
+  //     final price = getPrice(product, selectedPaymentMethod!);
+  //     return total + (price * quantity);
+  //     Logger().i('Totatal price invoice logic ', total);
+  //   });
+  // }
+
   double getTotalBillAmount() {
-    return productQuantities.entries.fold(0.0, (total, entry) {
-      final product = entry.key;
-      final quantity = entry.value;
-      final price = getPrice(product, selectedPaymentMethod!);
-      return total + (price * quantity);
+    Logger().i("Calculating total bill amount...");
+    double total = 0.0;
+    if (productQuantities.isEmpty) {
+      Logger().w("No products in the productQuantities map.");
+      return total;
+    }
+    productQuantities.forEach((product, quantity) {
+      if (quantity <= 0) {
+        Logger().w("Quantity for product ${product.name} is zero or negative.");
+      }
+      double price = getPrice(product,
+          selectedPaymentMethod!); // Ensure this method is returning valid prices
+      if (price <= 0) {
+        Logger().w("Price for product ${product.name} is zero or negative.");
+      }
+      double subtotal = price * quantity;
+      Logger().i(
+          "Product: ${product.name}, Price: $price, Quantity: $quantity, Subtotal: $subtotal");
+      total += subtotal;
     });
+    Logger().i("Total Bill Amount: $total");
+    return total;
   }
 
   double getDiscountAmount() {
@@ -228,7 +308,7 @@ class InvoiceLogic {
 
   Future<void> calculateTotalPaybleAmount() async {
     totalPaybleAmount = await getTotalPriceWithDiscount();
-    Logger().i('Total Payable Amount: $totalPaybleAmount');
+    //Logger().i('Total Payable Amount: $totalPaybleAmount');
   }
 
   void updateTotalPaybleAmount(double newTotalPaybleAmount) {
@@ -421,6 +501,28 @@ class InvoiceLogic {
       Logger().e('Error posting invoice data: $e');
       AleartBox.showAleart(context, DialogType.error, 'Error',
           'An error occurred while posting invoice data: $e');
+    }
+  }
+
+  //Employee commition added function
+  Future<void> AddCommission() async {
+    try {
+      int empId = 1; // Static employee ID
+      String date =
+          UtilFunctions.getCurrentDateTime(); // Get current date and time
+      double commissionAmount =
+          getTotalBillAmount(); // Get the commission amount
+
+      if (commissionAmount <= 0) {
+        Logger().w("Commission amount is zero or negative. Aborting API call.");
+        return;
+      }
+
+      var result =
+          await CommissionService.addCommission(empId, date, commissionAmount);
+      Logger().i("Commission successfully added/updated: $result");
+    } catch (e) {
+      Logger().e("Failed to add/update commission: ${e.toString()}");
     }
   }
 }

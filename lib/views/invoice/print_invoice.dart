@@ -340,53 +340,55 @@ class _PrintInvoiceState extends State<PrintInvoice> {
                               // Set isLoading to true when the button is tapped
                               isLoading = true;
                             });
-                            // if (_connected) {
-                            try {
-                              await widget.invoiceLogic.processInvoiceData(
-                                vehicleInventoryService,
-                                invoiceService,
-                                context,
-                              );
-                              setState(() {
-                                isLoading = false;
-                              });
-                              //_printReceipt();
-                            } catch (e) {
-                              Logger().e('Error printing receipt: $e');
-                              setState(() {
-                                isLoading = false;
-                              });
+                            if (_connected) {
+                              try {
+                                _printReceipt();
+                                invoiceLogic.AddCommission();
+                                await widget.invoiceLogic.processInvoiceData(
+                                  vehicleInventoryService,
+                                  invoiceService,
+                                  context,
+                                );
+
+                                setState(() {
+                                  isLoading = false;
+                                });
+                              } catch (e) {
+                                Logger().e('Error printing receipt: $e');
+                                setState(() {
+                                  isLoading = false;
+                                });
+                                if (mounted) {
+                                  AwesomeDialog(
+                                    context: context,
+                                    dialogType: DialogType.error,
+                                    headerAnimationLoop: false,
+                                    animType: AnimType.bottomSlide,
+                                    title: 'Print Error',
+                                    desc:
+                                        'An error occurred while printing the receipt. Please try again.',
+                                    buttonsTextStyle:
+                                        const TextStyle(color: Colors.black),
+                                    btnOkOnPress: () {},
+                                  ).show();
+                                }
+                              }
+                            } else {
                               if (mounted) {
                                 AwesomeDialog(
                                   context: context,
                                   dialogType: DialogType.error,
                                   headerAnimationLoop: false,
                                   animType: AnimType.bottomSlide,
-                                  title: 'Print Error',
+                                  title: 'Connection Error',
                                   desc:
-                                      'An error occurred while printing the receipt. Please try again.',
+                                      'No device connected. Please connect a device and try again.',
                                   buttonsTextStyle:
                                       const TextStyle(color: Colors.black),
                                   btnOkOnPress: () {},
                                 ).show();
                               }
                             }
-                            // } else {
-                            //   if (mounted) {
-                            //     AwesomeDialog(
-                            //       context: context,
-                            //       dialogType: DialogType.error,
-                            //       headerAnimationLoop: false,
-                            //       animType: AnimType.bottomSlide,
-                            //       title: 'Connection Error',
-                            //       desc:
-                            //           'No device connected. Please connect a device and try again.',
-                            //       buttonsTextStyle:
-                            //           const TextStyle(color: Colors.black),
-                            //       btnOkOnPress: () {},
-                            //     ).show();
-                            //   }
-                            // }
                           },
                           buttonColor: AppColor
                               .accentColor, // Use your accent color here
