@@ -7,7 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 
 import '../../components/custom_button.dart';
+import '../../models/employee_model.dart';
 import '../../models/print_setting_modle.dart';
+import '../../services/employee_api_service.dart';
 import '../../services/invoice_api_service.dart';
 import '../../services/vehicle_inventory_service.dart';
 import '../../utils/app_colors.dart';
@@ -340,55 +342,56 @@ class _PrintInvoiceState extends State<PrintInvoice> {
                               // Set isLoading to true when the button is tapped
                               isLoading = true;
                             });
-                            if (_connected) {
-                              try {
-                                _printReceipt();
-                                invoiceLogic.AddCommission();
-                                await widget.invoiceLogic.processInvoiceData(
-                                  vehicleInventoryService,
-                                  invoiceService,
-                                  context,
-                                );
+                            // if (_connected) {
+                            try {
+                              // _printReceipt();
+                              finalizeInvoice();
+                              //invoiceLogic.AddCommission();
+                              await widget.invoiceLogic.processInvoiceData(
+                                vehicleInventoryService,
+                                invoiceService,
+                                context,
+                              );
 
-                                setState(() {
-                                  isLoading = false;
-                                });
-                              } catch (e) {
-                                Logger().e('Error printing receipt: $e');
-                                setState(() {
-                                  isLoading = false;
-                                });
-                                if (mounted) {
-                                  AwesomeDialog(
-                                    context: context,
-                                    dialogType: DialogType.error,
-                                    headerAnimationLoop: false,
-                                    animType: AnimType.bottomSlide,
-                                    title: 'Print Error',
-                                    desc:
-                                        'An error occurred while printing the receipt. Please try again.',
-                                    buttonsTextStyle:
-                                        const TextStyle(color: Colors.black),
-                                    btnOkOnPress: () {},
-                                  ).show();
-                                }
-                              }
-                            } else {
+                              setState(() {
+                                isLoading = false;
+                              });
+                            } catch (e) {
+                              Logger().e('Error printing receipt: $e');
+                              setState(() {
+                                isLoading = false;
+                              });
                               if (mounted) {
                                 AwesomeDialog(
                                   context: context,
                                   dialogType: DialogType.error,
                                   headerAnimationLoop: false,
                                   animType: AnimType.bottomSlide,
-                                  title: 'Connection Error',
+                                  title: 'Print Error',
                                   desc:
-                                      'No device connected. Please connect a device and try again.',
+                                      'An error occurred while printing the receipt. Please try again.',
                                   buttonsTextStyle:
                                       const TextStyle(color: Colors.black),
                                   btnOkOnPress: () {},
                                 ).show();
                               }
                             }
+                            // } else {
+                            //   if (mounted) {
+                            //     AwesomeDialog(
+                            //       context: context,
+                            //       dialogType: DialogType.error,
+                            //       headerAnimationLoop: false,
+                            //       animType: AnimType.bottomSlide,
+                            //       title: 'Connection Error',
+                            //       desc:
+                            //           'No device connected. Please connect a device and try again.',
+                            //       buttonsTextStyle:
+                            //           const TextStyle(color: Colors.black),
+                            //       btnOkOnPress: () {},
+                            //     ).show();
+                            //   }
+                            // }
                           },
                           buttonColor: AppColor
                               .accentColor, // Use your accent color here
@@ -705,5 +708,29 @@ class _PrintInvoiceState extends State<PrintInvoice> {
       linefeed: 1,
     ));
     await bluetoothPrint.printReceipt(config, list);
+  }
+
+  void finalizeInvoice() async {
+    double totalBillAmount = widget.invoiceLogic.getTotalBillAmount();
+    int? employeeId = widget.invoiceLogic.empId;
+
+    if (employeeId == null) {
+      Logger().w(
+          "Employee ID is null, unable to fetch commission rate and finalize invoice.");
+      return;
+    }
+
+    try {
+      EmpCommissionModel commissionDetails =
+          await EmployeeService.fetchCommissionDetails(employeeId);
+      double commissionRate = commissionDetails.commissionRate;
+      double commissionAmount = totalBillAmount * (commissionRate / 100.0);
+
+      await widget.invoiceLogic.AddCommission(commissionAmount);
+      Logger().i(
+          "Commission added for total bill amount: $totalBillAmount with rate: $commissionRate% resulting in commission: $commissionAmount");
+    } catch (e) {
+      Logger().e("Failed to finalize invoice: $e");
+    }
   }
 }

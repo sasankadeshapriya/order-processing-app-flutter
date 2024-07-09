@@ -257,39 +257,13 @@ class InvoiceLogic {
     }
   }
 
-  // double getTotalBillAmount() {
-  //   return productQuantities.entries.fold(0.0, (total, entry) {
-  //     final product = entry.key;
-  //     final quantity = entry.value;
-  //     final price = getPrice(product, selectedPaymentMethod!);
-  //     return total + (price * quantity);
-  //     Logger().i('Totatal price invoice logic ', total);
-  //   });
-  // }
-
   double getTotalBillAmount() {
-    Logger().i("Calculating total bill amount...");
-    double total = 0.0;
-    if (productQuantities.isEmpty) {
-      Logger().w("No products in the productQuantities map.");
-      return total;
-    }
-    productQuantities.forEach((product, quantity) {
-      if (quantity <= 0) {
-        Logger().w("Quantity for product ${product.name} is zero or negative.");
-      }
-      double price = getPrice(product,
-          selectedPaymentMethod!); // Ensure this method is returning valid prices
-      if (price <= 0) {
-        Logger().w("Price for product ${product.name} is zero or negative.");
-      }
-      double subtotal = price * quantity;
-      Logger().i(
-          "Product: ${product.name}, Price: $price, Quantity: $quantity, Subtotal: $subtotal");
-      total += subtotal;
+    return productQuantities.entries.fold(0.0, (total, entry) {
+      final product = entry.key;
+      final quantity = entry.value;
+      final price = getPrice(product, selectedPaymentMethod!);
+      return total + (price * quantity);
     });
-    Logger().i("Total Bill Amount: $total");
-    return total;
   }
 
   double getDiscountAmount() {
@@ -505,21 +479,22 @@ class InvoiceLogic {
   }
 
   //Employee commition added function
-  Future<void> AddCommission() async {
+  Future<void> AddCommission(double totalBillAmount) async {
     try {
-      int empId = 1; // Static employee ID
+      int empId = 1; // Assuming static for example purposes
       String date =
           UtilFunctions.getCurrentDateTime(); // Get current date and time
-      double commissionAmount =
-          getTotalBillAmount(); // Get the commission amount
 
-      if (commissionAmount <= 0) {
+      Logger().i(
+          "Attempting to add/update commission with amount: $totalBillAmount");
+
+      if (totalBillAmount <= 0) {
         Logger().w("Commission amount is zero or negative. Aborting API call.");
         return;
       }
 
       var result =
-          await CommissionService.addCommission(empId, date, commissionAmount);
+          await CommissionService.addCommission(empId, date, totalBillAmount);
       Logger().i("Commission successfully added/updated: $result");
     } catch (e) {
       Logger().e("Failed to add/update commission: ${e.toString()}");

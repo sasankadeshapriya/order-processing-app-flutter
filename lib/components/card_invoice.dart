@@ -3,6 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:order_processing_app/utils/app_colors.dart';
 
+import '../views/payments/UpdatePaymentPage.dart';
+// Make sure this path is correct
+
 class InvoiceCard extends StatelessWidget {
   final String organizationName;
   final String createdAt;
@@ -11,7 +14,7 @@ class InvoiceCard extends StatelessWidget {
   final double totalAmount;
   final String referenceNumber;
 
-  const InvoiceCard({
+  InvoiceCard({
     super.key,
     required this.organizationName,
     required this.createdAt,
@@ -23,25 +26,20 @@ class InvoiceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Extracting month abbreviation and date from createdAt
     final DateTime createdDate = DateTime.parse(createdAt);
     final String monthAbbreviation = DateFormat('MMM').format(createdDate);
     final String day = DateFormat('dd').format(createdDate);
-
-    // Formatting creditPeriodEndDate as month/day
     final DateTime endDate = DateTime.parse(creditPeriodEndDate);
     final String endDateFormatted = DateFormat('MM/dd').format(endDate);
 
-    // Calculating whether the invoice is fully or partially received
     bool fullyReceived = paidAmount == totalAmount;
     String statusText = fullyReceived ? 'Received' : 'Partially received';
     Color statusColor =
         fullyReceived ? AppColor.successColor : AppColor.processingColor;
 
     return GestureDetector(
-      onTap: () {
-        // Define action on tap if necessary
-      },
+      onTapDown: _storePosition,
+      onLongPress: () => _showPopupMenu(context, referenceNumber),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 8),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -63,7 +61,7 @@ class InvoiceCard extends StatelessWidget {
             Column(
               children: [
                 Text(
-                  monthAbbreviation, // Displaying month abbreviation
+                  monthAbbreviation,
                   style: GoogleFonts.poppins(
                     color: AppColor.primaryColorLight,
                     fontSize: 10,
@@ -72,7 +70,7 @@ class InvoiceCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  day, // Displaying day
+                  day,
                   style: const TextStyle(
                     color: AppColor.primaryColorLight,
                     fontSize: 24,
@@ -151,7 +149,7 @@ class InvoiceCard extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      endDateFormatted, // Displaying formatted end date
+                      endDateFormatted,
                       style: GoogleFonts.poppins(
                         color: AppColor.primaryTextColor,
                         fontSize: 10,
@@ -177,4 +175,44 @@ class InvoiceCard extends StatelessWidget {
       ),
     );
   }
+
+  void _storePosition(TapDownDetails details) {
+    _tapPosition = details.globalPosition;
+  }
+
+  void _showPopupMenu(BuildContext context, String referenceNumber) async {
+    await showMenu(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        _tapPosition.dx,
+        _tapPosition.dy,
+        _tapPosition.dx,
+        _tapPosition.dy,
+      ),
+      items: [
+        PopupMenuItem(
+          value: 'add_payment',
+          child: Row(
+            children: const [
+              Icon(Icons.payment, color: Colors.black54),
+              SizedBox(width: 8),
+              Text('Add Payment'),
+            ],
+          ),
+        ),
+      ],
+      elevation: 8.0,
+    ).then((value) {
+      if (value == 'add_payment') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) =>
+                  UpdatePaymentPage(referenceNumber: referenceNumber)),
+        );
+      }
+    });
+  }
+
+  late Offset _tapPosition; // Declare this outside of methods
 }
