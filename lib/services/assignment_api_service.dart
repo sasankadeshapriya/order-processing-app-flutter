@@ -122,7 +122,7 @@ class AssignmentApiService {
     print("Attempting to fetch client locations for route ID: $routeId");
 
     try {
-      final url = Uri.parse('$baseUrl/client/route/$routeId');
+      final url = Uri.parse('$baseUrl/client/route/$routeId/locations');
       print("Constructed URL: $url");
 
       final response = await http.get(
