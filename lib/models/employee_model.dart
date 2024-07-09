@@ -21,3 +21,21 @@ class EmployeeModel {
     );
   }
 }
+
+class EmpCommissionModel {
+  final double commissionRate;
+
+  EmpCommissionModel({required this.commissionRate});
+
+  factory EmpCommissionModel.fromJson(Map<String, dynamic> json) {
+    var employeeData = json['employee'] ?? {};
+    double parsedRate = 0;
+    try {
+      parsedRate =
+          double.parse(employeeData['commission_rate']?.toString() ?? '0');
+    } catch (e) {
+      throw Exception("Failed to parse commission rate: $e");
+    }
+    return EmpCommissionModel(commissionRate: parsedRate);
+  }
+}
