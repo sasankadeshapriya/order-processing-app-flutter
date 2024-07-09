@@ -21,10 +21,12 @@ class TokenManager {
   }
 
   static Future<void> retrieveEmpId() async {
-    final String? token = await TokenManager.getToken(); // Make sure TokenManager handles token securely
+    final String? token = await TokenManager
+        .getToken(); // Make sure TokenManager handles token securely
     if (token != null) {
       try {
-        Map<String, dynamic> decodedToken = JwtDecoder.decode(token); // Now 'JwtDecoder' is defined
+        Map<String, dynamic> decodedToken =
+            JwtDecoder.decode(token); // Now 'JwtDecoder' is defined
         TokenManager.empId = decodedToken['userId'] as int?;
       } catch (e) {
         print('Error decoding token: $e');

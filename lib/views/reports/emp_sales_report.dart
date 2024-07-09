@@ -322,7 +322,7 @@ class _EmpSalesReportState extends State<EmpSalesReport> {
                                           ),
                                         ),
                                         Text(
-                                          '\$${amount.toStringAsFixed(2)}',
+                                          'LKR${amount.toStringAsFixed(2)}',
                                           style: GoogleFonts.poppins(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 15,
@@ -378,7 +378,7 @@ class _EmpSalesReportState extends State<EmpSalesReport> {
                                           ),
                                         ),
                                         Text(
-                                          '\$${amount.toStringAsFixed(2)}',
+                                          'LKR${amount.toStringAsFixed(2)}',
                                           style: GoogleFonts.poppins(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 15,
@@ -639,7 +639,7 @@ class _EmpSalesReportState extends State<EmpSalesReport> {
                                           ),
                                         ),
                                         Text(
-                                          '\$${invoice.totalAmount.toStringAsFixed(2)}',
+                                          'LKR${invoice.totalAmount.toStringAsFixed(2)}',
                                           style: GoogleFonts.poppins(
                                             color: AppColor.primaryTextColor,
                                             fontSize: 14,
@@ -661,7 +661,7 @@ class _EmpSalesReportState extends State<EmpSalesReport> {
                                           ),
                                         ),
                                         Text(
-                                          '\$${invoice.paidAmount.toStringAsFixed(2)}',
+                                          'LKR${invoice.paidAmount.toStringAsFixed(2)}',
                                           style: GoogleFonts.poppins(
                                             color: AppColor.primaryTextColor,
                                             fontSize: 14,
@@ -683,7 +683,7 @@ class _EmpSalesReportState extends State<EmpSalesReport> {
                                           ),
                                         ),
                                         Text(
-                                          '\$${invoice.balance.toStringAsFixed(2)}',
+                                          'LKR${invoice.balance.toStringAsFixed(2)}',
                                           style: GoogleFonts.poppins(
                                             color: AppColor.primaryTextColor,
                                             fontSize: 14,

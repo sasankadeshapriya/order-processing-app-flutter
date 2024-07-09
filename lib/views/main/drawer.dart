@@ -10,10 +10,12 @@ import 'package:order_processing_app/views/clients/client_list.dart';
 import 'package:order_processing_app/views/inventory/product_list.dart';
 import 'package:order_processing_app/views/invoice/invoicePage.dart';
 import 'package:order_processing_app/views/invoice/invoice_list_page.dart';
+import 'package:order_processing_app/views/reports/emp_sales_report.dart';
+import 'package:order_processing_app/views/reports/salesreport.dart';
 
 import '../clients/client_form.dart';
 
-enum DrawerMenu { none, client, invoice, inventory }
+enum DrawerMenu { none, client, invoice, inventory, reports }
 
 class AppDrawer extends StatefulWidget {
   final String userName;
@@ -122,7 +124,29 @@ class _AppDrawerState extends State<AppDrawer> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  buildListTile(AppComponents.drawReportIcon, 'Reports', () {}),
+                  buildExpandableTile(
+                    AppComponents.drawReportIcon,
+                    'Reports',
+                    DrawerMenu.reports,
+                    [
+                      buildSubMenuItem('Sales Report', () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SalesReport(),
+                          ),
+                        );
+                      }),
+                      buildSubMenuItem('Cash/Credit Sales', () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const EmpSalesReport(),
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
                   const SizedBox(height: 8),
                   buildExpandableTile(
                     AppComponents.drawInvoiceIcon,
