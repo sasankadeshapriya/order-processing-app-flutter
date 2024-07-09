@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:logger/logger.dart';
 import 'package:order_processing_app/models/sales_invoice.dart';
 import 'package:order_processing_app/services/invoice_api_service.dart';
 import 'package:order_processing_app/utils/app_colors.dart';
@@ -32,6 +33,7 @@ class _SalesReportState extends State<SalesReport> {
       filterInvoices();
       isLoading = false;
     } catch (error) {
+      Logger().w(error);
       print('Error fetching data: $error');
       isLoading = false;
     } finally {

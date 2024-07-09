@@ -38,8 +38,8 @@ class SalesInvoice {
 
     return SalesInvoice(
       referenceNumber: json['reference_number'] as String? ?? '',
-      clientId: json['client_id'] as int? ?? 0,
-      employeeId: json['employee_id'] as int? ?? 0,
+      clientId: int.tryParse(json['client_id'].toString()) ?? 0,
+      employeeId: int.tryParse(json['employee_id'].toString()) ?? 0,
       totalAmount: double.tryParse(json['total_amount'].toString()) ?? 0.0,
       paidAmount: double.tryParse(json['paid_amount'].toString()) ?? 0.0,
       balance: double.tryParse(json['balance'].toString()) ?? 0.0,
@@ -69,10 +69,11 @@ class SalesInvoiceDetail {
     required this.sum,
     required this.product,
   });
+
   factory SalesInvoiceDetail.fromJson(Map<String, dynamic> json) {
     return SalesInvoiceDetail(
-      productId: json['product_id'] as int? ?? 0,
-      batchId: json['batch_id'] as int? ?? 0,
+      productId: int.tryParse(json['product_id'].toString()) ?? 0,
+      batchId: int.tryParse(json['batch_id'].toString()) ?? 0,
       quantity: double.tryParse(json['quantity'].toString()) ?? 0.0,
       sum: double.tryParse(json['sum'].toString()) ?? 0.0,
       product:
@@ -100,7 +101,7 @@ class SalesProduct {
 
   factory SalesProduct.fromJson(Map<String, dynamic> json) {
     return SalesProduct(
-      id: json['id'] as int? ?? 0,
+      id: int.tryParse(json['id'].toString()) ?? 0,
       name: json['name'] as String? ?? 'Unknown',
       productCode: json['product_code'] as String? ?? '',
       measurementUnit: json['measurement_unit'] as String? ?? '',
