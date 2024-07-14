@@ -5,6 +5,7 @@ import '../../components/custom_button.dart';
 import '../../models/product_modle.dart';
 import '../../models/product_response.dart';
 import '../../services/product_api_service.dart';
+import '../../services/token_manager.dart';
 import '../../services/vehicle_inventory_service.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/util_functions.dart';
@@ -30,7 +31,8 @@ class _ProductListState extends State<ProductList> {
   @override
   void initState() {
     super.initState();
-    int empId = 1; // This could be dynamically assigned as needed
+    int empId =
+        TokenManager.empId ?? 1; // This could be dynamically assigned as needed
     String currentDate = UtilFunctions.getCurrentDateTime();
     futureProducts = ProductService.fetchProducts(empId, currentDate);
     vehicleInventoryService = VehicleInventoryService();

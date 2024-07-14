@@ -12,6 +12,7 @@ import 'package:order_processing_app/views/main/drawer.dart';
 import 'package:order_processing_app/views/map/map_page.dart';
 import 'package:order_processing_app/views/reports/report_list_page.dart';
 
+import '../../services/token_manager.dart';
 import '../clients/client_form.dart';
 import '../inventory/product_list.dart';
 import '../invoice/invoicePage.dart';
@@ -34,7 +35,8 @@ class _UserDashboardState extends State<UserDashboard>
   String _userName = "Loading...";
   String _userEmail = "";
   String _userProfilePic = "";
-  Color connectionStatusColor = Colors.grey; // Default to grey
+  Color connectionStatusColor = Colors.grey;
+  int empId = TokenManager.empId ?? 0; // Default to grey
 
   @override
   bool get wantKeepAlive => true;
@@ -624,7 +626,7 @@ class _UserDashboardState extends State<UserDashboard>
   }
 
   Future<void> _loadData() async {
-    final commissions = await CommissionService.getCommissionsByEmpId(1);
+    final commissions = await CommissionService.getCommissionsByEmpId(empId);
     final todaysCommissions =
         await CommissionService.getTodaysCommissions(commissions);
     double todaysCommission = 0;
@@ -640,7 +642,7 @@ class _UserDashboardState extends State<UserDashboard>
   Future<void> _fetchUserDetails() async {
     try {
       EmployeeModel user =
-          await EmployeeService.getEmployeeDetails(1); // Example user ID
+          await EmployeeService.getEmployeeDetails(empId); // Example user ID
       setState(() {
         _userName = user.name;
         _userEmail = user.email ?? "";
@@ -691,8 +693,8 @@ class _UserDashboardState extends State<UserDashboard>
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           Expanded(
-                            child: const Text(
-                              "Welcome back",
+                            child: Text(
+                              'Welcome back',
                               style: TextStyle(
                                   fontWeight: FontWeight.w500,
                                   letterSpacing: 1,

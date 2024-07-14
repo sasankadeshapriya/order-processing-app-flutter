@@ -23,6 +23,10 @@ class _SplashscreenState extends State<Splashscreen> {
   Future<void> _checkLoginStatus() async {
     final String? token = await TokenManager.getToken();
     if (token != null) {
+      await TokenManager
+          .retrieveEmpId(); // Retrieve empId from shared preferences
+      print(
+          'Employee ID vvvvvvvvvvvvv: ${TokenManager.empId}'); // Now it prints after retrieval
       _navigateToDashbord();
     } else {
       _navigateToLogin();
