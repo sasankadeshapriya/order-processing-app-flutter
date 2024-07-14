@@ -6,6 +6,8 @@ import 'package:location/location.dart';
 import 'package:order_processing_app/services/assignment_api_service.dart';
 import 'package:order_processing_app/utils/logger.dart';
 
+import '../services/token_manager.dart';
+
 class GlobalLocationService with WidgetsBindingObserver {
   late final Location _locationController;
   late StreamSubscription<LocationData> _locationSubscription;
@@ -66,7 +68,8 @@ class GlobalLocationService with WidgetsBindingObserver {
   }
 
   void _updateLocationInDatabase(LocationData location) {
-    String employeeId = '1';
+    //String employeeId = TokenManager.empId;
+    String employeeId = TokenManager.empId?.toString() ?? '1';
     Map<String, dynamic> locationData = {
       'latitude': location.latitude,
       'longitude': location.longitude,

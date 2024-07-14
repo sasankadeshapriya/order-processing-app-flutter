@@ -1,10 +1,10 @@
+import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:order_processing_app/services/token_manager.dart';
 import 'package:order_processing_app/utils/app_colors.dart';
 import 'package:order_processing_app/utils/app_components.dart';
-import 'package:order_processing_app/utils/util_functions.dart';
 import 'package:order_processing_app/views/auth/login.dart';
 import 'package:order_processing_app/views/clients/client_list.dart';
 import 'package:order_processing_app/views/inventory/product_list.dart';
@@ -14,8 +14,9 @@ import 'package:order_processing_app/views/reports/emp_sales_report.dart';
 import 'package:order_processing_app/views/reports/salesreport.dart';
 
 import '../clients/client_form.dart';
+import '../payments/payment_list.dart';
 
-enum DrawerMenu { none, client, invoice, inventory, reports }
+enum DrawerMenu { none, client, invoice, inventory, reports, payment }
 
 class AppDrawer extends StatefulWidget {
   final String userName;
@@ -172,8 +173,21 @@ class _AppDrawerState extends State<AppDrawer> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  buildListTile(
-                      AppComponents.drawPaymentIcon, 'Payment', () {}),
+                  buildExpandableTile(
+                    AppComponents.drawClientIcon,
+                    'Payment',
+                    DrawerMenu.payment,
+                    [
+                      buildSubMenuItem('View Payment', () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PaymentList(),
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
                   const SizedBox(height: 8),
                   buildExpandableTile(
                     AppComponents.drawClientIcon,
@@ -338,12 +352,29 @@ class _AppDrawerState extends State<AppDrawer> {
   }
 
   Future<void> _handleLogout(BuildContext context) async {
-    setState(() {});
-    await TokenManager.clearToken();
-    _navigateToLogin(context);
+    AwesomeDialog(
+      context: context,
+      dialogType: DialogType.warning,
+      animType: AnimType.bottomSlide,
+      title: 'Log out',
+      desc: 'Are you sure you want to log out?',
+      btnCancelOnPress: () {},
+      btnOkOnPress: () async {
+        await TokenManager
+            .clearToken(); // Clear user token or any auth-related storage
+        _navigateToLogin(context);
+      },
+      btnCancelText: "Cancel",
+      btnOkText: "Yes",
+    )..show();
   }
 
   void _navigateToLogin(BuildContext context) {
-    UtilFunctions.navigateTo(context, const Login());
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const Login()),
+      (Route<dynamic> route) =>
+          false, // Removes all the routes beneath the pushed route
+    );
   }
 }

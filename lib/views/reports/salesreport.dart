@@ -7,6 +7,8 @@ import 'package:order_processing_app/utils/app_colors.dart';
 import 'package:order_processing_app/widgets/bar_chart_widget.dart';
 import 'package:order_processing_app/widgets/pie_chart_widget.dart';
 
+import '../../services/token_manager.dart';
+
 class SalesReport extends StatefulWidget {
   const SalesReport({super.key});
 
@@ -19,7 +21,9 @@ class _SalesReportState extends State<SalesReport> {
   List<SalesInvoice> allInvoices = [];
   Map<String, Map<String, dynamic>> productData = {};
   bool isLoading = true;
-  bool showQuantity = true; // Toggle between quantity and total sales
+  bool showQuantity = true;
+  int empId =
+      TokenManager.empId ?? 1; // Toggle between quantity and total sales
 
   @override
   void initState() {
@@ -29,7 +33,7 @@ class _SalesReportState extends State<SalesReport> {
 
   void fetchData() async {
     try {
-      allInvoices = await InvoiceService.fetchInvoicesByEmployeeId(1);
+      allInvoices = await InvoiceService.fetchInvoicesByEmployeeId(empId);
       filterInvoices();
       isLoading = false;
     } catch (error) {

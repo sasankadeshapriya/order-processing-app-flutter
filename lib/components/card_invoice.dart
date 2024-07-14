@@ -190,16 +190,16 @@ class InvoiceCard extends StatelessWidget {
         _tapPosition.dy,
       ),
       items: [
-        PopupMenuItem(
-          value: 'add_payment',
-          child: Row(
-            children: const [
-              Icon(Icons.payment, color: Colors.black54),
-              SizedBox(width: 8),
-              Text('Add Payment'),
-            ],
-          ),
-        ),
+        // PopupMenuItem(
+        //   value: 'add_payment',
+        //   child: Row(
+        //     children: const [
+        //       Icon(Icons.payment, color: Colors.black54),
+        //       SizedBox(width: 8),
+        //       Text('Add Payment'),
+        //     ],
+        //   ),
+        // ),
       ],
       elevation: 8.0,
     ).then((value) {
@@ -207,8 +207,10 @@ class InvoiceCard extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-              builder: (context) =>
-                  UpdatePaymentPage(referenceNumber: referenceNumber)),
+              builder: (context) => UpdatePaymentPage(
+                  referenceNumber: referenceNumber,
+                  totalAmount: totalAmount,
+                  paidAmount: paidAmount)),
         );
       }
     });

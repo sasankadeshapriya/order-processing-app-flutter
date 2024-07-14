@@ -8,6 +8,7 @@ import '../../components/custom_button.dart';
 import '../../components/custom_widget.dart';
 import '../../models/clients_modle.dart';
 import '../../services/client_api_service.dart';
+import '../../services/token_manager.dart';
 import '../../utils/app_colors.dart';
 import '../helpers/form_validation.dart';
 import '../main/dashboard.dart';
@@ -372,7 +373,7 @@ class _ClientFormState extends State<ClientForm> {
       latitude: _latitude,
       longitude: _longitude,
       phoneNo: _contactNumber,
-      addedByEmployeeId: 3, // change hard code values
+      addedByEmployeeId: TokenManager.empId ?? 1, // change hard code values
       status: 'not verified',
       creditLimit: 30000.0,
       creditPeriod: 90,
@@ -428,7 +429,7 @@ class _ClientFormState extends State<ClientForm> {
       'discount': client.discount,
       'credit_limit': client.creditLimit,
       'credit_period': client.creditPeriod,
-      'added_by_employee_id': client.addedByEmployeeId,
+      'added_by_employee_id': TokenManager.empId ?? 1,
     };
 
     var result = await clientService.updateClient(client.clientId, clientData);

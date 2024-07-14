@@ -16,6 +16,8 @@ import 'package:order_processing_app/utils/logger.dart';
 import 'package:order_processing_app/views/map/loading.dart';
 import 'package:order_processing_app/widgets/assignment_container_widget.dart';
 
+import '../../services/token_manager.dart';
+
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
 
@@ -36,6 +38,7 @@ class _MapPageState extends State<MapPage> {
 
   Map<PolylineId, Polyline> polylines = {};
   Set<Marker> markers = {};
+  int empId = TokenManager.empId ?? 0;
 
   bool _isLoading = true;
   String _vehicleNumber = 'N/A';
@@ -155,9 +158,9 @@ class _MapPageState extends State<MapPage> {
     });
 
     try {
-      int employeeId = 1; // Assuming you have the employeeId beforehand
+      // Assuming you have the employeeId beforehand
       List<Map<String, dynamic>> assignments =
-          await AssignmentApiService.getAssignmentsWithDetails(employeeId);
+          await AssignmentApiService.getAssignmentsWithDetails(empId);
       DateTime today = DateTime.now();
       bool foundAssignmentsForToday = false;
 

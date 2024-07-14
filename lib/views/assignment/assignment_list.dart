@@ -8,6 +8,8 @@ import 'package:order_processing_app/utils/app_colors.dart';
 import 'package:order_processing_app/utils/app_components.dart';
 import 'package:order_processing_app/views/map/map_page.dart';
 
+import '../../services/token_manager.dart';
+
 class AssignmentList extends StatefulWidget {
   const AssignmentList({super.key});
 
@@ -23,6 +25,7 @@ class _AssignmentListState extends State<AssignmentList> {
   bool _isAscending = false; // Initialize with descending order
   bool _isLoading = true;
   DateTimeRange? _selectedDateRange;
+  int empId = TokenManager.empId ?? 1;
 
   @override
   void initState() {
@@ -33,7 +36,7 @@ class _AssignmentListState extends State<AssignmentList> {
   void _loadAssignments() async {
     try {
       var assignmentDetails =
-          await AssignmentApiService.getAssignmentsWithDetails(1);
+          await AssignmentApiService.getAssignmentsWithDetails(empId);
       setState(() {
         assignments =
             assignmentDetails.map((e) => Assignment.fromJson(e)).toList();

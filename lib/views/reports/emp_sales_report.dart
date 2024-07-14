@@ -8,6 +8,8 @@ import 'package:order_processing_app/services/invoice_api_service.dart';
 import 'package:order_processing_app/utils/app_colors.dart';
 import 'package:order_processing_app/widgets/line_chart_widget.dart';
 
+import '../../services/token_manager.dart';
+
 class EmpSalesReport extends StatefulWidget {
   const EmpSalesReport({super.key});
 
@@ -19,7 +21,8 @@ class _EmpSalesReportState extends State<EmpSalesReport> {
   List<SalesInvoice> invoices = [];
   String viewType = 'Weekly'; // Can be 'weekly' or 'Monthly'
   String selectedPaymentOption = 'cash'; // Can be 'cash' or 'credit'
-  List<Client> clients = []; // List to hold clients data
+  List<Client> clients = [];
+  int empId = TokenManager.empId ?? 0; // List to hold clients data
 
   @override
   void initState() {
@@ -32,7 +35,7 @@ class _EmpSalesReportState extends State<EmpSalesReport> {
     try {
       // Replace 1 with the actual employee ID
       List<SalesInvoice> fetchedInvoices =
-          await InvoiceService.fetchInvoicesByEmployeeId(1);
+          await InvoiceService.fetchInvoicesByEmployeeId(empId);
       setState(() {
         invoices = fetchedInvoices;
       });

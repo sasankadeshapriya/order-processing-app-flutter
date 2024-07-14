@@ -15,6 +15,7 @@ import '../services/client_api_service.dart';
 import '../services/commission_api_service.dart';
 import '../services/invoice_api_service.dart';
 import '../services/product_api_service.dart';
+import '../services/token_manager.dart';
 import '../services/vehicle_inventory_service.dart';
 import '../views/main/dashboard.dart';
 import 'util_functions.dart';
@@ -28,7 +29,7 @@ class InvoiceLogic {
   Product? selectedProduct;
   Client? selectedClient;
   late String _token;
-  late int? empId = 1; // change after debug
+  late int? empId = TokenManager.empId; // change after debug
   String employeeName = '';
   String invoiceErrorMessage = '';
   double? _outstandingBalance = 0.0;
@@ -121,15 +122,14 @@ class InvoiceLogic {
   Future<void> fetchClients(BuildContext context) async {
     try {
       final clientData = await ClientService.getClients();
-      clients = clientData;
+      // Filter clients to include only those with a 'verified' status
+      clients =
+          clientData.where((client) => client.status == 'verified').toList();
     } catch (error) {
       Logger().e('Error fetching clients: $error');
-
-      // User-friendly error message initialization
+      // Error handling remains the same as you have already implemented
       String userFriendlyMessage =
           "We're having trouble loading client information right now.";
-
-      // Determine a user-friendly message based on the error type
       if (error.toString().contains('TimeoutException')) {
         userFriendlyMessage =
             "Connection timed out. Please check your internet connection and try again.";
@@ -144,7 +144,6 @@ class InvoiceLogic {
             "An unexpected error occurred. Please try again later.";
       }
 
-      // Optionally, use a dialog to communicate the error to the user
       if (context != null) {
         showDialog(
           context: context,
@@ -154,9 +153,7 @@ class InvoiceLogic {
             actions: <Widget>[
               TextButton(
                 child: Text('OK'),
-                onPressed: () {
-                  Navigator.of(ctx).pop(); // Close the dialog
-                },
+                onPressed: () => Navigator.of(ctx).pop(),
               ),
             ],
           ),

@@ -11,6 +11,7 @@ import '../../components/custom_widget.dart';
 import '../../models/clients_modle.dart';
 import '../../models/payments_modle.dart';
 import '../../models/product_modle.dart';
+import '../../services/token_manager.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/invoice_logic.dart';
 import '../../utils/util_functions.dart';
@@ -34,7 +35,8 @@ class _InvoicePageState extends State<InvoicePage> {
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool showPaymentFields = false;
-  int? empId;
+
+  int empId = TokenManager.empId ?? 1;
 
   @override
   void initState() {
@@ -46,7 +48,7 @@ class _InvoicePageState extends State<InvoicePage> {
     await invoiceLogic.fetchClients(context);
     // Assuming empId and currentDate are correctly set
     await invoiceLogic.fetchProductDetails(
-        1, UtilFunctions.getCurrentDateTime(), context);
+        empId, UtilFunctions.getCurrentDateTime(), context);
     Logger()
         .f('Products loaded into dropdown: ${invoiceLogic.productList.length}');
   }
@@ -856,27 +858,44 @@ class _InvoicePageState extends State<InvoicePage> {
     return CustomButton(
       buttonText: 'Print Invoice',
       onTap: () async {
-        bool canPrint = invoiceLogic.canPrintInvoice();
-        if (canPrint) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => PrintInvoice(invoiceLogic: invoiceLogic)),
-          );
+        double payableTotal = await invoiceLogic.getTotalPriceWithDiscount();
+        String paymentMethod =
+            invoiceLogic.selectedPaymentMethod?.paymentName ?? '';
+
+        if (canProceedWithCheque(payableTotal, paymentMethod)) {
+          bool canPrint = invoiceLogic.canPrintInvoice();
+          if (canPrint) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) =>
+                      PrintInvoice(invoiceLogic: invoiceLogic)),
+            );
+          } else {
+            AleartBox.showAleart(
+              context,
+              DialogType.error,
+              'Incomplete Information',
+              invoiceLogic.invoiceErrorMessage,
+            );
+          }
         } else {
-          // Show an error alert if the requirements are not met
           AleartBox.showAleart(
             context,
             DialogType.error,
-            'Incomplete Information',
-            invoiceLogic.invoiceErrorMessage,
+            'Payment Method Error',
+            'Cannot proceed with Cheque payment for totals greater than 1000.',
           );
         }
       },
       buttonColor: invoiceLogic.canPrintInvoice()
           ? AppColor.accentColor
-          : AppColor.disableBtnColor, // Enable or disable the button visually
+          : AppColor.disableBtnColor,
       isLoading: false,
     );
+  }
+
+  bool canProceedWithCheque(double payableTotal, String paymentMethod) {
+    return !(paymentMethod == 'Cheque' && payableTotal > 1000);
   }
 }
