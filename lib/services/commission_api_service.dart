@@ -10,7 +10,7 @@ class CommissionService {
 
   static Future<CommissionModel> addCommission(
       int empId, String date, double commissionAmount) async {
-    final url = '$baseUrl/commission/add';
+    const url = '$baseUrl/commission/add';
     final String requestBody = jsonEncode(<String, dynamic>{
       'emp_id': empId,
       'date': date,

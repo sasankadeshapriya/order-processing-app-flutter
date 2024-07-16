@@ -21,7 +21,7 @@ class _ProductListState extends State<ProductList> {
   late Future<ProductResponse> futureProducts;
   bool _isAscending = true;
   bool isLoading = false;
-  TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
   List<Product> _products = [];
   List<Product> _filteredProducts = [];
@@ -253,7 +253,7 @@ class _ProductListState extends State<ProductList> {
 
                     deleteAllVehicleInventories();
                   },
-                )..show();
+                ).show();
               },
               buttonColor: AppColor.accentColor,
               isLoading: isLoading,

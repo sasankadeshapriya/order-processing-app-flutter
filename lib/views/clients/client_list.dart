@@ -87,7 +87,7 @@ class _ClientListState extends State<ClientList> {
             title: 'Success',
             desc: 'Client successfully removed',
             btnOkOnPress: () {},
-          )..show();
+          ).show();
         } else {
           AwesomeDialog(
             context: context,
@@ -96,10 +96,10 @@ class _ClientListState extends State<ClientList> {
             title: 'Error',
             desc: result['message'],
             btnOkOnPress: () {},
-          )..show();
+          ).show();
         }
       },
-    )..show();
+    ).show();
   }
 
   void _editClient(Client client) {

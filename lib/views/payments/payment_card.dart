@@ -203,7 +203,7 @@ class _PaymentCardState extends State<PaymentCard> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '$amountFormatted',
+                  amountFormatted,
                   style: GoogleFonts.poppins(
                     color: AppColor.primaryTextColor,
                     fontSize: 10,
