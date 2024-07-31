@@ -1,14 +1,18 @@
 class EmployeeModel {
   final int id;
-  final String name;
-  final String? email; // This is already nullable
-  final String? profilePicture; // Make profilePicture nullable
+  final String? name;
+  final String email;
+  final String? phoneNo;
+  final String? nic;
+  final String? profilePicture;
 
   EmployeeModel({
     required this.id,
-    required this.name,
-    this.email,
-    this.profilePicture, // Accept nullable profilePicture
+    this.name,
+    required this.email,
+    this.phoneNo,
+    this.nic,
+    this.profilePicture,
   });
 
   factory EmployeeModel.fromJson(Map<String, dynamic> json) {
@@ -16,11 +20,13 @@ class EmployeeModel {
       id: json['id'],
       name: json['name'],
       email: json['email'],
-      profilePicture:
-          json['profile_picture'] as String?, // Safely cast as nullable String
+      phoneNo: json['phone_no'],
+      nic: json['nic'],
+      profilePicture: json['profile_picture'],
     );
   }
 }
+
 
 class EmpCommissionModel {
   final double commissionRate;

@@ -329,7 +329,7 @@ class _MapPageState extends State<MapPage> {
               icon: BitmapDescriptor.defaultMarker,
               infoWindow: InfoWindow(
                 title: organization,
-                snippet: 'Client at Route $routeId',
+                snippet: 'Client at Route ID: $routeId',
               ),
             ));
           } else {

@@ -52,7 +52,32 @@ class FormValidator {
     return null;
   }
 
-  // static String? email(String? value) {
+  static String? validateNic(String? value) {
+  if (value == null || value.isEmpty) {
+  return 'Please enter a NIC number';
+  }
+
+  // Regular expressions for NIC validation
+  final nic9DigitWithLetterRegExp = RegExp(r'^\d{9}[Vv]?$');
+  final nic12DigitRegExp = RegExp(r'^\d{12}$');
+
+  // Validate 9-digit NIC with optional V/v
+  if (value.length == 10 && !nic9DigitWithLetterRegExp.hasMatch(value)) {
+  return 'NIC must be 9 digits followed by optional V/v';
+  }
+
+  // Validate 12-digit NIC
+  if (value.length == 12 && !nic12DigitRegExp.hasMatch(value)) {
+  return 'NIC must be exactly 12 digits';
+  }
+
+  // If neither of the conditions is met
+  return 'Invalid NIC format';
+  }
+
+
+
+// static String? email(String? value) {
   //   final emailRegExp = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
   //   if (value == null || value.isEmpty) {
   //     return 'Please enter an email';
