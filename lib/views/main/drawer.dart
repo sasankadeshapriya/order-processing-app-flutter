@@ -7,6 +7,7 @@ import 'package:order_processing_app/utils/app_colors.dart';
 import 'package:order_processing_app/utils/app_components.dart';
 import 'package:order_processing_app/views/auth/login.dart';
 import 'package:order_processing_app/views/clients/client_list.dart';
+import 'package:order_processing_app/views/employee/employee_update_form.dart';
 import 'package:order_processing_app/views/inventory/product_list.dart';
 import 'package:order_processing_app/views/invoice/invoicePage.dart';
 import 'package:order_processing_app/views/invoice/invoice_list_page.dart';
@@ -59,27 +60,49 @@ class _AppDrawerState extends State<AppDrawer> {
                         : null,
                     child: widget.userProfilePic.isEmpty
                         ? Text(
-                            widget.userName.isNotEmpty
-                                ? widget.userName[0].toUpperCase()
-                                : "", // Get the first letter if the name is not empty
-                            style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black),
-                          )
+                      widget.userName.isNotEmpty
+                          ? widget.userName[0].toUpperCase()
+                          : "", // Get the first letter if the name is not empty
+                      style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black),
+                    )
                         : null, // No child text when the image is available
                   ),
                   Positioned(
                     bottom: 0,
                     right: 0,
-                    child: Container(
-                      width: 20,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: widget
-                            .connectionStatusColor, // Use widget.connectionStatusColor directly
-                        border: Border.all(color: Colors.white, width: 2),
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const EmployeeUpdate(),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        width: 35,
+                        height: 35,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(50),
+                          gradient: LinearGradient(
+                            colors: [Colors.white.withOpacity(1), Colors.white.withOpacity(0.5)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.3),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: Icon(Icons.edit, color: AppColor.primaryColor, size: 20),
+                        ),
                       ),
                     ),
                   ),
