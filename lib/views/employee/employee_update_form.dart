@@ -1,7 +1,6 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:order_processing_app/components/custom_widget.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:order_processing_app/services/employee_api_service.dart';
 import 'package:order_processing_app/services/token_manager.dart';
 import 'package:order_processing_app/utils/app_colors.dart';
@@ -27,6 +26,10 @@ class _EmployeeUpdateState extends State<EmployeeUpdate> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _nicController = TextEditingController();
   int empId = TokenManager.empId ?? 0;
+
+  String? _nameError;
+  String? _phoneError;
+  String? _nicError;
 
   @override
   void initState() {
@@ -60,10 +63,7 @@ class _EmployeeUpdateState extends State<EmployeeUpdate> {
       isUploading = true;
     });
     try {
-      print('Starting profile picture update...');
-      print('File path: ${imageFile.path}');
       await EmployeeService.updateProfilePicture(empId, imageFile);
-      print('Profile picture updated successfully.');
       EmployeeModel updatedEmployee = await EmployeeService.getEmployeeDetails(empId);
       setState(() {
         _logoImagePath = updatedEmployee.profilePicture;
@@ -86,22 +86,19 @@ class _EmployeeUpdateState extends State<EmployeeUpdate> {
     final nic12DigitRegExp = RegExp(r'^\d{12}$');
 
     if (value.length == 10) {
-      // Check for 9 digits followed by a letter
       if (!nic9DigitWithLetterRegExp.hasMatch(value)) {
         return 'NIC must be 9 digits followed by a letter (optional)';
       }
     } else if (value.length == 12) {
-      // Check for exactly 12 digits
       if (!nic12DigitRegExp.hasMatch(value)) {
         return 'NIC must be exactly 12 digits';
       }
     } else {
-      return 'NIC must be 10 characters (9 digits + letter) or exactly 12 digits';
+      return 'Invalid format for NIC';
     }
 
     return null;
   }
-
 
   String? _validatePhoneNumber(String? value) {
     final phoneRegExp = RegExp(r'^[0-9]{10}$');
@@ -124,7 +121,6 @@ class _EmployeeUpdateState extends State<EmployeeUpdate> {
         nic: _nicController.text.isNotEmpty ? _nicController.text : null,
         phoneNo: _phoneController.text.isNotEmpty ? _phoneController.text : null,
       );
-      print('Employee details updated successfully.');
 
       // Fetch updated employee details
       EmployeeModel updatedEmployee = await EmployeeService.getEmployeeDetails(empId);
@@ -155,25 +151,17 @@ class _EmployeeUpdateState extends State<EmployeeUpdate> {
     }
   }
 
-
   void _handleUpdate() {
     if (!isLoading) {
-      // Validate fields
-      String? nicError = _validateNic(_nicController.text);
-      String? phoneError = _validatePhoneNumber(_phoneController.text);
+      setState(() {
+        _nameError = _nameController.text.isEmpty ? 'Please enter a name' : null;
+        _phoneError = _validatePhoneNumber(_phoneController.text);
+        _nicError = _validateNic(_nicController.text);
+      });
 
-      if (nicError != null) {
-        _showErrorDialog('Invalid NIC', nicError);
-        return;
+      if (_phoneError == null && _nicError == null) {
+        _updateEmployeeDetails();
       }
-
-      if (phoneError != null) {
-        _showErrorDialog('Invalid Phone Number', phoneError);
-        return;
-      }
-
-      // Proceed with update
-      _updateEmployeeDetails();
     }
   }
 
@@ -187,6 +175,51 @@ class _EmployeeUpdateState extends State<EmployeeUpdate> {
       btnOkText: 'OK',
       btnOkOnPress: () {},
     ).show();
+  }
+
+  Widget _buildTextFormField({
+    required TextEditingController controller,
+    required String labelText,
+    required String hintText,
+    String? errorText,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextFormField(
+          controller: controller,
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            color: AppColor.primaryTextColor,
+            fontWeight: FontWeight.w500,
+          ),
+          keyboardType: keyboardType,
+          decoration: InputDecoration(
+            labelText: labelText,
+            labelStyle: GoogleFonts.poppins(
+              fontSize: 14,
+              color: AppColor.primaryTextColor,
+            ),
+            hintText: hintText,
+            hintStyle: GoogleFonts.poppins(
+              fontSize: 14,
+              color: AppColor.primaryTextColor.withOpacity(0.8),
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(
+                color: AppColor.accentColor, // Replace with your desired color
+              ),
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            errorText: errorText,
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -238,30 +271,32 @@ class _EmployeeUpdateState extends State<EmployeeUpdate> {
                           String? imagePath = await openImagePickerBottomSheet(context, ImageType.profile);
                           if (imagePath != null) {
                             File imageFile = File(imagePath);
-                            print('Selected image path: $imagePath');
                             await _updateProfilePicture(imageFile);
                           }
                         },
                       ),
                     ),
                     const SizedBox(height: 20),
-                    CustomTextFormField(
+                    _buildTextFormField(
                       controller: _nameController,
                       labelText: 'User name',
-                      hintText: 'User name',
+                      hintText: 'Enter User name',
+
                     ),
                     const SizedBox(height: 20),
-                    CustomTextFormField(
+                    _buildTextFormField(
                       controller: _phoneController,
                       labelText: 'Phone number',
-                      hintText: 'Phone number',
+                      hintText: 'Enter Phone number',
+                      errorText: _phoneError,
                       keyboardType: TextInputType.phone,
                     ),
                     const SizedBox(height: 20),
-                    CustomTextFormField(
+                    _buildTextFormField(
                       controller: _nicController,
                       labelText: 'NIC',
-                      hintText: 'NIC',
+                      hintText: 'Enter NIC Number (NIC)',
+                      errorText: _nicError,
                     ),
                   ],
                 ),

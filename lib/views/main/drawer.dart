@@ -197,7 +197,7 @@ class _AppDrawerState extends State<AppDrawer> {
                   ),
                   const SizedBox(height: 8),
                   buildExpandableTile(
-                    AppComponents.drawClientIcon,
+                    AppComponents.drawPaymentIcon,
                     'Payment',
                     DrawerMenu.payment,
                     [
