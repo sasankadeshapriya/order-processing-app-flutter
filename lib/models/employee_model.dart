@@ -1,41 +1,33 @@
 class EmployeeModel {
   final int id;
   final String name;
-  final String? email; // This is already nullable
-  final String? profilePicture; // Make profilePicture nullable
+  final String? email; // Keep nullable annotation
+  final String? profilePicture; // Keep nullable annotation
+  final double commissionRate; // Include new properties from stashed changes
+  final String? phoneNo; // Include new properties from stashed changes
+  final String? nic; // Include new properties from stashed changes
 
   EmployeeModel({
     required this.id,
     required this.name,
     this.email,
-    this.profilePicture, // Accept nullable profilePicture
+    this.profilePicture,
+    required this.commissionRate, // Initialize in constructor from stashed changes
+    this.phoneNo, // Initialize in constructor from stashed changes
+    this.nic, // Initialize in constructor from stashed changes
   });
 
   factory EmployeeModel.fromJson(Map<String, dynamic> json) {
+    var employeeData = json['employee'] ?? json;
     return EmployeeModel(
-      id: json['id'],
-      name: json['name'],
-      email: json['email'],
-      profilePicture:
-          json['profile_picture'] as String?, // Safely cast as nullable String
+      id: employeeData['id'],
+      name: employeeData['name'],
+      email: employeeData['email'],
+      profilePicture: employeeData['profile_picture'] as String?,
+      commissionRate:
+          double.parse(employeeData['commission_rate']?.toString() ?? '0'),
+      phoneNo: employeeData['phoneNo'] as String?, // Deserialize from JSON
+      nic: employeeData['nic'] as String?, // Deserialize from JSON
     );
-  }
-}
-
-class EmpCommissionModel {
-  final double commissionRate;
-
-  EmpCommissionModel({required this.commissionRate});
-
-  factory EmpCommissionModel.fromJson(Map<String, dynamic> json) {
-    var employeeData = json['employee'] ?? {};
-    double parsedRate = 0;
-    try {
-      parsedRate =
-          double.parse(employeeData['commission_rate']?.toString() ?? '0');
-    } catch (e) {
-      throw Exception("Failed to parse commission rate: $e");
-    }
-    return EmpCommissionModel(commissionRate: parsedRate);
   }
 }

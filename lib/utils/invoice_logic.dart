@@ -5,7 +5,7 @@ import 'package:logger/logger.dart';
 
 import '../components/alert_dialog.dart';
 import '../models/clients_modle.dart';
-import '../models/invoice_modle.dart'; // Import Invoice and InvoiceProduct
+import '../models/invoice_modle.dart';
 import '../models/payments_modle.dart';
 import '../models/processed_product.dart'; // Import the existing ProcessedProduct model
 import '../models/product_modle.dart';

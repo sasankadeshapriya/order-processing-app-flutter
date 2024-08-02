@@ -721,7 +721,7 @@ class _PrintInvoiceState extends State<PrintInvoice> {
     }
 
     try {
-      EmpCommissionModel commissionDetails =
+      EmployeeModel commissionDetails =
           await EmployeeService.fetchCommissionDetails(employeeId);
       double commissionRate = commissionDetails.commissionRate;
       double commissionAmount = totalBillAmount * (commissionRate / 100.0);
