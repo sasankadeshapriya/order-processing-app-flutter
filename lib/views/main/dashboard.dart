@@ -644,7 +644,7 @@ class _UserDashboardState extends State<UserDashboard>
       EmployeeModel user =
           await EmployeeService.getEmployeeDetails(empId); // Example user ID
       setState(() {
-        _userName = user.name;
+        _userName = user.name ?? "";
         _userEmail = user.email ?? "";
         _userProfilePic = user.profilePicture ?? "";
       });

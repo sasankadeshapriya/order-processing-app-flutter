@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:order_processing_app/components/card_invoice.dart';
 import 'package:order_processing_app/models/invoice_mod.dart';
 import 'package:order_processing_app/services/invoice_api_service.dart';
+import 'package:order_processing_app/services/token_manager.dart';
 import 'package:order_processing_app/utils/app_colors.dart';
 import 'package:order_processing_app/utils/app_components.dart';
 import 'package:order_processing_app/views/invoice/invoicePage.dart';
@@ -17,7 +18,8 @@ class InvoiceList extends StatefulWidget {
 
 class _InvoiceListState extends State<InvoiceList> {
   late Future<List<Invoice>> _invoicesFuture;
-  final int employeeId = 1; // Hardcoded employee ID for filtering
+  final int? employeeId =
+      TokenManager.empId; // Hardcoded employee ID for filtering
   String _status = 'All'; // Initialize with 'All' status
   String _sortBy =
       'Created Date'; // Initialize with 'Created Date' as default sorting

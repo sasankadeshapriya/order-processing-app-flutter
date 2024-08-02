@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:bluetooth_print/bluetooth_print.dart';
 import 'package:bluetooth_print/bluetooth_print_model.dart';
 import 'package:flutter/material.dart';
@@ -336,60 +335,58 @@ class _PrintInvoiceState extends State<PrintInvoice> {
                         child: CustomButton(
                           buttonText: 'Print Receipt',
                           onTap: () async {
-                            setState(() {
-                              // Set isLoading to true when the button is tapped
-                              isLoading = true;
-                            });
-                            if (_connected) {
-                              try {
-                                _printReceipt();
-                                finalizeInvoice();
-                                //invoiceLogic.AddCommission();
-                                await widget.invoiceLogic.processInvoiceData(
-                                  vehicleInventoryService,
-                                  invoiceService,
-                                  context,
-                                );
+                            // if (_connected) {
+                            //   try {
+                            //     setState(() {
+                            //       isLoading = true;
+                            //     });
+                            //    // _printReceipt();
+                            finalizeInvoice();
+                            await widget.invoiceLogic.processInvoiceData(
+                              vehicleInventoryService,
+                              invoiceService,
+                              context,
+                            );
 
-                                setState(() {
-                                  isLoading = false;
-                                });
-                              } catch (e) {
-                                Logger().e('Error printing receipt: $e');
-                                setState(() {
-                                  isLoading = false;
-                                });
-                                if (mounted) {
-                                  AwesomeDialog(
-                                    context: context,
-                                    dialogType: DialogType.error,
-                                    headerAnimationLoop: false,
-                                    animType: AnimType.bottomSlide,
-                                    title: 'Print Error',
-                                    desc:
-                                        'An error occurred while printing the receipt. Please try again.',
-                                    buttonsTextStyle:
-                                        const TextStyle(color: Colors.black),
-                                    btnOkOnPress: () {},
-                                  ).show();
-                                }
-                              }
-                            } else {
-                              if (mounted) {
-                                AwesomeDialog(
-                                  context: context,
-                                  dialogType: DialogType.error,
-                                  headerAnimationLoop: false,
-                                  animType: AnimType.bottomSlide,
-                                  title: 'Connection Error',
-                                  desc:
-                                      'No device connected. Please connect a device and try again.',
-                                  buttonsTextStyle:
-                                      const TextStyle(color: Colors.black),
-                                  btnOkOnPress: () {},
-                                ).show();
-                              }
-                            }
+                            setState(() {
+                              isLoading = false;
+                            });
+                            // } catch (e) {
+                            //   Logger().e('Error printing receipt: $e');
+                            //   setState(() {
+                            //     isLoading = false;
+                            //   });
+                            //   if (mounted) {
+                            //     AwesomeDialog(
+                            //       context: context,
+                            //       dialogType: DialogType.error,
+                            //       headerAnimationLoop: false,
+                            //       animType: AnimType.bottomSlide,
+                            //       title: 'Print Error',
+                            //       desc:
+                            //           'An error occurred while printing the receipt. Please try again.',
+                            //       buttonsTextStyle:
+                            //           const TextStyle(color: Colors.black),
+                            //       btnOkOnPress: () {},
+                            //     ).show();
+                            //   }
+                            // }
+                            // } else {
+                            //   if (mounted) {
+                            //     AwesomeDialog(
+                            //       context: context,
+                            //       dialogType: DialogType.error,
+                            //       headerAnimationLoop: false,
+                            //       animType: AnimType.bottomSlide,
+                            //       title: 'Connection Error',
+                            //       desc:
+                            //           'No device connected. Please connect a device and try again.',
+                            //       buttonsTextStyle:
+                            //           const TextStyle(color: Colors.black),
+                            //       btnOkOnPress: () {},
+                            //     ).show();
+                            //   }
+                            // }
                           },
                           buttonColor: AppColor
                               .accentColor, // Use your accent color here
@@ -718,6 +715,7 @@ class _PrintInvoiceState extends State<PrintInvoice> {
       return;
     }
 
+
     // try {
     //   EmployeeModel commissionDetails =
     //       await EmployeeService.fetchCommissionDetails(employeeId);
@@ -730,5 +728,6 @@ class _PrintInvoiceState extends State<PrintInvoice> {
     // } catch (e) {
     // Logger().e("Failed to finalize invoice: $e");
     //}
+
   }
 }

@@ -29,6 +29,7 @@ class EmployeeService {
     }
   }
 
+
   // Function to update the employee's profile picture
   static Future<void> updateProfilePicture(
       int employeeId, File imageFile) async {
@@ -39,6 +40,17 @@ class EmployeeService {
     // Attach the image file to the request
     request.files.add(await http.MultipartFile.fromPath(
       'profile_picture', // The field name must match the server's expectation
+
+
+  // Function to update the employee's profile picture
+  static Future<void> updateProfilePicture(int employeeId, File imageFile) async {
+    final url = Uri.parse('https://api.gsutil.xyz/employee/$employeeId/update/profile-picture');
+    final request = http.MultipartRequest('PATCH', url);
+
+    // Attach the image file to the request
+    request.files.add(await http.MultipartFile.fromPath(
+      'profile_picture',  // The field name must match the server's expectation
+
       imageFile.path,
       contentType: MediaType('image', 'jpeg'), // Use MediaType from http_parser
     ));
@@ -52,9 +64,10 @@ class EmployeeService {
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(responseBody);
         final profilePictureUrl = jsonResponse['url'];
+
         print(
             'Profile picture updated successfully. New URL: $profilePictureUrl');
-      } else {
+    } else {
         print('Failed to update profile picture: ${response.statusCode}');
         print('Response body: $responseBody');
         throw Exception('Failed to update profile picture');
@@ -62,6 +75,7 @@ class EmployeeService {
     } catch (e) {
       print('Error updating profile picture: $e');
       throw Exception('Error updating profile picture: $e');
+
     }
   }
 
@@ -94,6 +108,8 @@ class EmployeeService {
     } catch (e) {
       print('Error updating employee details: $e');
       throw Exception('Error updating employee details: $e');
+
     }
   }
+
 }

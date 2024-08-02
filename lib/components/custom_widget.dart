@@ -1,8 +1,6 @@
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 
-import '../../../utils/app_colors.dart';
-
 class CustomTextFormField extends StatefulWidget {
   final String? hintText;
   final String? prefixText;
@@ -28,6 +26,8 @@ class CustomTextFormField extends StatefulWidget {
   final bool showBorder;
   final bool obscure;
   final bool showVisibilityIcon;
+  final VoidCallback? onSuffixIconTap;
+
   // New parameter to control visibility icon
 
   const CustomTextFormField({
@@ -56,6 +56,7 @@ class CustomTextFormField extends StatefulWidget {
     this.showVisibilityIcon = false,
     this.initialValue, // Initialize showVisibilityIcon
     this.showPrefixIcon = false,
+    this.onSuffixIconTap,
   });
 
   @override
@@ -99,27 +100,19 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
             suffixText: widget.suffixText,
             hintText: widget.hintText,
             labelText: widget.labelText,
-            labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+            //labelStyle: const TextStyle(fontWeight: FontWeight.bold),
             prefixText: widget.prefixText,
             prefixIcon: widget.showPrefixIcon ? widget.prefixIcon : null,
-            suffixIcon: widget
-                    .showVisibilityIcon // Check if visibility icon should be shown
+            suffixIcon: widget.onSuffixIconTap != null
                 ? GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        obscureText = !obscureText;
-                      });
-                    },
-                    child: Icon(
-                      obscureText ? Icons.visibility_off : Icons.visibility,
-                      color: AppColor.svgIconColor,
-                    ),
+                    onTap: widget.onSuffixIconTap,
+                    child: widget.suffixIcon,
                   )
-                : widget
-                    .suffixIcon, // Show custom suffix icon if visibility icon is not requested
+                : widget.suffixIcon,
+            // Show custom suffix icon if visibility icon is not requested
             border: widget.showBorder
                 ? OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10.0),
+                    borderRadius: BorderRadius.circular(5.0),
                   )
                 : InputBorder.none,
           ),

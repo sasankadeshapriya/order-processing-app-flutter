@@ -7,6 +7,7 @@ class EmployeeModel {
   final String? phoneNo; // Include new properties from stashed changes
   final String? nic; // Include new properties from stashed changes
 
+
   EmployeeModel({
     required this.id,
     required this.name,
@@ -19,10 +20,22 @@ class EmployeeModel {
 
   factory EmployeeModel.fromJson(Map<String, dynamic> json) {
     var employeeData = json['employee'] ?? json;
+
+    this.profilePicture, // Accept nullable profilePicture
+    required this.commissionRate,
+
+  });
+
+  factory EmployeeModel.fromJson(Map<String, dynamic> json) {
+    var employeeData =
+        json['employee'] ?? json; // Fallback to root if no employee key
+
+
     return EmployeeModel(
       id: employeeData['id'],
       name: employeeData['name'],
       email: employeeData['email'],
+
       profilePicture: employeeData['profile_picture'] as String?,
       commissionRate:
           double.parse(employeeData['commission_rate']?.toString() ?? '0'),
@@ -31,3 +44,8 @@ class EmployeeModel {
     );
   }
 }
+
+
+
+
+
