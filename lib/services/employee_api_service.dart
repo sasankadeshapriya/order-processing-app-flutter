@@ -28,26 +28,6 @@ class EmployeeService {
     }
   }
 
-  // Fetch commission details for an employee
-  static Future<EmpCommissionModel> fetchCommissionDetails(int employeeId) async {
-    final url = '$baseUrl/employee/$employeeId/commission';
-    final response = await http.get(Uri.parse(url));
-
-    if (response.statusCode == 200) {
-      final jsonData = jsonDecode(response.body);
-      if (jsonData['employee'] != null) {
-        try {
-          return EmpCommissionModel.fromJson(jsonData);
-        } catch (e) {
-          throw Exception("Error parsing employee commission data: $e");
-        }
-      } else {
-        throw Exception("Employee data not found in the response");
-      }
-    } else {
-      throw Exception('Failed to load employee details: ${response.body}');
-    }
-  }
 
   // Function to update the employee's profile picture
   static Future<void> updateProfilePicture(int employeeId, File imageFile) async {
@@ -111,4 +91,5 @@ class EmployeeService {
       throw Exception('Error updating employee details: $e');
     }
   }
+
 }

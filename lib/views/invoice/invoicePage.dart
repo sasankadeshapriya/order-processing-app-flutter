@@ -32,6 +32,11 @@ class _InvoicePageState extends State<InvoicePage> {
   final TextEditingController productController = TextEditingController();
   final TextEditingController paymentController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
+  final TextEditingController bankController = TextEditingController();
+  final TextEditingController chequeNumberController = TextEditingController();
+  final TextEditingController amountController = TextEditingController();
+  final TextEditingController dateController = TextEditingController();
+  String? selectedBank;
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool showPaymentFields = false;
@@ -100,7 +105,6 @@ class _InvoicePageState extends State<InvoicePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        //_buildDateDisplay(),
                         const SizedBox(height: 20),
                         _buildClientDropdown(width, 200),
                         const SizedBox(height: 20),
@@ -109,9 +113,9 @@ class _InvoicePageState extends State<InvoicePage> {
                         _buildProductDropdown(width),
                         const SizedBox(height: 20),
                         _buildProductList(),
-                        const SizedBox(height: 10),
+                        //const SizedBox(height: 10),
                         _buildTotalSection(),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 20),
                         _buildAddPaymentSection(),
                         const SizedBox(height: 20),
                         Expanded(child: Container()), // Pushes button to bottom
@@ -125,21 +129,6 @@ class _InvoicePageState extends State<InvoicePage> {
             );
           },
         ),
-      ),
-    );
-  }
-
-  Widget _buildDateDisplay() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      child: Row(
-        children: [
-          const Spacer(),
-          Text(
-            DateFormat('yyyy-MM-dd').format(DateTime.now()),
-            style: const TextStyle(fontSize: 15),
-          ),
-        ],
       ),
     );
   }
@@ -408,6 +397,29 @@ class _InvoicePageState extends State<InvoicePage> {
                   // Validate input against available stock
                   double? quantity = double.tryParse(newValue);
                   if (quantity != null) {
+                    if (product.measurementUnit == 'pcs') {
+                      // Check if the entered value is a decimal
+                      if (quantity % 1 != 0) {
+                        // Increment the decimal entry attempts counter
+                        invoiceLogic.decimalEntryAttempts++;
+
+                        // Show warning message if more than one decimal entry attempt
+                        if (invoiceLogic.decimalEntryAttempts >= 3) {
+                          AleartBox.showAleart(
+                            context,
+                            DialogType.warning,
+                            'Invalid Input',
+                            'Decimal values are not allowed for pieces (pcs)',
+                          );
+                        }
+
+                        // Round to the nearest integer
+                        int roundedQuantity = quantity.round();
+                        controller.text = roundedQuantity.toString();
+                        quantity = roundedQuantity.toDouble();
+                      }
+                    }
+
                     if (quantity > product.quantity) {
                       // If entered quantity exceeds available stock, set it to maximum available
                       controller.text = product.quantity.toStringAsFixed(
@@ -477,9 +489,9 @@ class _InvoicePageState extends State<InvoicePage> {
         borderRadius: BorderRadius.circular(15.0),
         border: Border.all(
           color: AppColor.primaryColor, // Choose your desired border color
-          width: 1.0, // Choose the width of the border
+          width: 1.3, // Choose the width of the border
         ),
-        color: AppColor.accentColor.withOpacity(0.3),
+        color: AppColor.backgroundColor,
       ),
       child: Container(
         width: MediaQuery.of(context).size.width,
@@ -594,7 +606,8 @@ class _InvoicePageState extends State<InvoicePage> {
         borderRadius: BorderRadius.circular(6), // Border radius
       ),
       child: ExpansionTileCard(
-        expandedColor: Colors.grey[300],
+        expandedColor: AppColor.backgroundColor,
+        //expandedColor: Colors.grey[300],
         title: const Text('Add Payments'),
         children: <Widget>[
           const Divider(thickness: 1.0, height: 1.0),
@@ -614,61 +627,18 @@ class _InvoicePageState extends State<InvoicePage> {
                     children: [
                       const Icon(Icons.add),
                       const SizedBox(width: 4),
-                      const Text(
-                        'Add payment',
-                        style: TextStyle(fontSize: 14),
+                      Text(
+                        'Add Payment Details',
+                        style: const TextStyle(fontSize: 14),
                       ),
                       const Spacer(),
                       CustomAddButton(
-                        onPressed: () async {
-                          // Check if all required conditions are met before proceeding
-                          if (invoiceLogic.selectedClient == null ||
-                              invoiceLogic.selectedPaymentMethod == null ||
-                              invoiceLogic.productQuantities.isEmpty) {
-                            AleartBox.showAleart(
-                              context,
-                              DialogType.warning,
-                              'Unable to Full Paid Invoice',
-                              'You must select a client, a payment method, and at least one product before adding payment.',
-                            );
-                          } else {
-                            double payableAmount =
-                                await invoiceLogic.getTotalPriceWithDiscount();
-                            String selectedPaymentMethod = invoiceLogic
-                                    .selectedPaymentMethod?.paymentName ??
-                                '';
-
-                            Logger().d(
-                                "Payment Method Selected: $selectedPaymentMethod");
-
-                            if (selectedPaymentMethod != 'Cash' &&
-                                selectedPaymentMethod != 'Cheque') {
-                              AleartBox.showAleart(
-                                context,
-                                DialogType.error,
-                                'Error',
-                                'Full payment cannot be made using credit.',
-                              );
-                            } else {
-                              setState(() {
-                                invoiceLogic.isFullyPaid = true;
-                                invoiceLogic.paidAmount = payableAmount;
-                                invoiceLogic.outstandingBalance = 0.0;
-                                Logger().f(
-                                  "Invoice marked as fully paid. Total price: $payableAmount, Fully Paid Amount: ${invoiceLogic.paidAmount}, Outstanding Balance: ${invoiceLogic.outstandingBalance}",
-                                );
-                              });
-
-                              AleartBox.showAleart(
-                                context,
-                                DialogType.success,
-                                'Success',
-                                'Invoice marked as fully paid.',
-                              );
-                            }
-                          }
-                        },
-                        buttonText: 'Full Paid Now',
+                        onPressed: () async {},
+                        buttonText:
+                            invoiceLogic.selectedPaymentMethod?.paymentName ==
+                                    'Credit'
+                                ? 'Fully Credit'
+                                : 'Full Paid Now',
                         backgroundColor: AppColor.accentColor,
                         textColor: Colors.white,
                         strokeColor: AppColor.accentStrokeColor,
@@ -677,174 +647,16 @@ class _InvoicePageState extends State<InvoicePage> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 15),
                 if (showPaymentFields) ...[
-                  const SizedBox(height: 15),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey),
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: TextFormField(
-                            readOnly: true,
-                            controller: TextEditingController(
-                              text: DateFormat('yyyy-MM-dd')
-                                  .format(DateTime.now()),
-                            ),
-                            decoration: InputDecoration(
-                              labelText: 'Select Date',
-                              border: InputBorder.none,
-                              suffixIcon: IconButton(
-                                onPressed: () {
-                                  // Handle date selection
-                                },
-                                icon: const Icon(Icons.calendar_today),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 5),
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey),
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: TextFormField(
-                            keyboardType: TextInputType.number,
-                            controller: _amountController,
-                            decoration: const InputDecoration(
-                              labelText: 'Amount For Payments',
-                              border: InputBorder.none,
-                            ),
-                            validator: (value) {
-                              if (value!.isEmpty) {
-                                return 'Please enter the amount';
-                              }
-                              return null; // Return null if the input is valid
-                            },
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        CustomAddButton(
-                          onPressed: () async {
-                            setState(() {
-                              _amountController.clear();
-                              invoiceLogic.paidAmount = 0.0;
-                              showPaymentFields = false;
-                              invoiceLogic.isPartiallyPaid = false;
-                              invoiceLogic.isFullyPaid = false;
-                              invoiceLogic.outstandingBalance;
-                            });
-                            await invoiceLogic.getOutstandingBalance(
-                                invoiceLogic.selectedClient!.clientId);
-                          },
-                          buttonText: 'Cancel',
-                          backgroundColor: AppColor.accentColor,
-                          textColor: Colors.white,
-                          strokeColor: AppColor.accentStrokeColor,
-                          borderRadius: 10,
-                        ),
-                        const SizedBox(width: 8),
-                        CustomAddButton(
-                          onPressed: () async {
-                            double payableTotal =
-                                await invoiceLogic.getTotalPriceWithDiscount();
-                            if (_amountController.text.isEmpty ||
-                                _amountController.text.trim().isEmpty ||
-                                (double.tryParse(_amountController.text) ??
-                                        0) <=
-                                    0) {
-                              AleartBox.showAleart(
-                                context,
-                                DialogType.error,
-                                'Error',
-                                'Please enter a valid amount.',
-                              );
-                            } else {
-                              double paymentAmount =
-                                  double.parse(_amountController.text);
-                              Logger().d('Entered Amount: $paymentAmount');
-
-                              if (paymentController.text == 'Cash' ||
-                                  paymentController.text == 'Cheque' ||
-                                  paymentController.text == 'Credit') {
-                                // Proceed to adjust the payment
-                                double newBalance =
-                                    payableTotal - paymentAmount;
-                                bool isPartiallyPaid = newBalance > 0 &&
-                                    paymentAmount < payableTotal;
-
-                                setState(() {
-                                  invoiceLogic.paidAmount += paymentAmount;
-                                  invoiceLogic.outstandingBalance = newBalance;
-
-                                  // Update the partially paid flag based on the new balance
-                                  invoiceLogic.isPartiallyPaid =
-                                      isPartiallyPaid;
-
-                                  if (isPartiallyPaid &&
-                                      paymentController.text != 'Credit') {
-                                    // If the invoice is partially paid and the method was Cash or Cheque, change to Credit
-                                    invoiceLogic
-                                        .updateSelectedPaymentMethod('Credit');
-                                    paymentController.text = 'Credit';
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                            'Payment method changed to Credit.'),
-                                      ),
-                                    );
-                                    Logger().d(
-                                        'Payment method changed to Credit due to partial payment.');
-                                  }
-
-                                  Logger().d(
-                                      'New balance after payment: $newBalance');
-                                  Logger().d(
-                                      'Is partially paid: ${invoiceLogic.isPartiallyPaid}');
-                                });
-
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                        'Amount of Rs.${paymentAmount.toStringAsFixed(2)} added successfully! New balance: Rs.${newBalance.toStringAsFixed(2)}'),
-                                  ),
-                                );
-                              } else {
-                                AleartBox.showAleart(
-                                  context,
-                                  DialogType.error,
-                                  'Error',
-                                  'Invalid payment method for this action.',
-                                );
-                              }
-
-                              // Clear the text field after processing
-                              _amountController.clear();
-                            }
-                          },
-                          buttonText: 'Add',
-                          backgroundColor: AppColor.accentColor,
-                          textColor: Colors.white,
-                          strokeColor: AppColor.accentStrokeColor,
-                          borderRadius: 10,
-                        )
-                      ],
-                    ),
-                  ),
+                  if (invoiceLogic.selectedPaymentMethod?.paymentName ==
+                      'Cheque')
+                    ..._buildChequeDetailsInputs(),
+                  if (invoiceLogic.selectedPaymentMethod?.paymentName ==
+                          'Cash' ||
+                      invoiceLogic.selectedPaymentMethod?.paymentName ==
+                          'Credit')
+                    ..._buildOtherPaymentInputs(),
                 ],
               ],
             ),
@@ -854,37 +666,182 @@ class _InvoicePageState extends State<InvoicePage> {
     );
   }
 
+  List<Widget> _buildChequeDetailsInputs() {
+    return [
+      _buildBankDropdown(200), //326
+      const SizedBox(height: 10), // Dropdown for bank selection
+      _buildChequeNumberInput(),
+      const SizedBox(height: 10), // Input for cheque number
+      _buildAmountInput(),
+      const SizedBox(height: 10), // Input for amount
+      _buildDateInput(),
+      const SizedBox(height: 10), // Input for date
+      _buildActionButtons(), // "Cancel" and "Add" buttons
+    ];
+  }
+
+  List<Widget> _buildOtherPaymentInputs() {
+    return [
+      _buildAmountInput(),
+      const SizedBox(height: 10), // Input for amount
+      _buildDateInput(),
+      const SizedBox(height: 10), // Input for date
+      _buildActionButtons(),
+    ];
+  }
+
+  Widget _buildBankDropdown(double height) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    double dropdownWidth = screenWidth * 0.905;
+    return DropdownMenu<String>(
+      controller: bankController,
+      width: dropdownWidth,
+      menuHeight: height,
+      hintText: "Select Bank",
+      requestFocusOnTap: true,
+      enableFilter: true,
+      menuStyle: MenuStyle(
+        backgroundColor: MaterialStateProperty.all<Color>(
+          invoiceLogic.selectedClient != null
+              ? Colors.lightBlue.shade50
+              : Colors.grey.shade300,
+        ),
+      ),
+      label: const Text('Select Bank'),
+      onSelected: (String? selectedBank) {
+        setState(() {
+          this.selectedBank = selectedBank;
+        });
+      },
+      dropdownMenuEntries: [
+        'Bank of Ceylon (BOC)', // Standardized naming convention
+        'Commercial Bank of Ceylon PLC', // This might typically refer to Commercial Bank of Ceylon PLC
+        'DFCC Bank',
+        'Hatton National Bank (HNB)',
+        'National Development Bank PLC (NDB)',
+        'Pan Asia Banking Corporation PLC',
+        'People’s Bank',
+        'Sampath Bank PLC',
+        'Seylan Bank PLC',
+        'Union Bank of Colombo PLC' // Placeholder bank options
+      ].map<DropdownMenuEntry<String>>(
+        (String bank) {
+          return DropdownMenuEntry<String>(
+            value: bank,
+            label: bank,
+            leadingIcon: Icon(Icons.account_balance), // Just a placeholder icon
+          );
+        },
+      ).toList(),
+    );
+  }
+
+  Widget _buildChequeNumberInput() {
+    return CustomTextFormField(
+      labelText: 'Cheque Number',
+      hintText: 'Cheque Number',
+      textAlign: TextAlign.left,
+      controller: chequeNumberController,
+      keyboardType: TextInputType.number,
+      onSaved: (value) {},
+    );
+  }
+
+  Widget _buildAmountInput() {
+    return CustomTextFormField(
+      labelText: 'Amount',
+      hintText: 'Amount',
+      textAlign: TextAlign.left,
+      controller: amountController,
+      keyboardType: TextInputType.number,
+      onSaved: (value) {},
+    );
+  }
+
+  Widget _buildDateInput() {
+    return CustomTextFormField(
+      controller: dateController,
+      labelText: 'Date',
+      hintText: 'Select Date',
+      textAlign: TextAlign.left,
+      suffixIcon: const Icon(Icons.calendar_today),
+      onSuffixIconTap: () async {
+        DateTime? pickedDate = await showDatePicker(
+          context: context,
+          initialDate: DateTime.now(),
+          firstDate: DateTime(2000),
+          lastDate: DateTime(2100),
+        );
+        if (pickedDate != null) {
+          String formattedDate = DateFormat('yyyy-MM-dd').format(pickedDate);
+          setState(() {
+            dateController.text = formattedDate;
+          });
+        }
+      },
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: [
+        Expanded(
+          flex: 1, // Adjust flex to change the proportion
+          child: CustomAddButton(
+            onPressed: () {
+              setState(() {
+                bankController.clear();
+                chequeNumberController.clear();
+                amountController.clear();
+                dateController.clear();
+                showPaymentFields = false;
+              });
+            },
+            buttonText: 'Cancel',
+            backgroundColor: AppColor.accentColor,
+            textColor: Colors.white,
+            strokeColor: AppColor.accentStrokeColor,
+            borderRadius: 10,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          flex: 1, // Adjust flex to change the proportion
+          child: CustomAddButton(
+            onPressed: () {
+              if (_formKey.currentState!.validate()) {
+                print('Cheque details added');
+              }
+            },
+            buttonText: 'Add',
+            backgroundColor: AppColor.accentColor,
+            textColor: Colors.white,
+            strokeColor: AppColor.accentStrokeColor,
+            borderRadius: 10,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildPrintInvoiceButton() {
     return CustomButton(
       buttonText: 'Print Invoice',
       onTap: () async {
-        double payableTotal = await invoiceLogic.getTotalPriceWithDiscount();
-        String paymentMethod =
-            invoiceLogic.selectedPaymentMethod?.paymentName ?? '';
-
-        if (canProceedWithCheque(payableTotal, paymentMethod)) {
-          bool canPrint = invoiceLogic.canPrintInvoice();
-          if (canPrint) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) =>
-                      PrintInvoice(invoiceLogic: invoiceLogic)),
-            );
-          } else {
-            AleartBox.showAleart(
-              context,
-              DialogType.error,
-              'Incomplete Information',
-              invoiceLogic.invoiceErrorMessage,
-            );
-          }
+        bool canPrint = invoiceLogic.canPrintInvoice();
+        if (canPrint) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => PrintInvoice(invoiceLogic: invoiceLogic)),
+          );
         } else {
           AleartBox.showAleart(
             context,
             DialogType.error,
-            'Payment Method Error',
-            'Cannot proceed with Cheque payment for totals greater than 1000.',
+            'Incomplete Information',
+            invoiceLogic.invoiceErrorMessage,
           );
         }
       },
@@ -893,9 +850,5 @@ class _InvoicePageState extends State<InvoicePage> {
           : AppColor.disableBtnColor,
       isLoading: false,
     );
-  }
-
-  bool canProceedWithCheque(double payableTotal, String paymentMethod) {
-    return !(paymentMethod == 'Cheque' && payableTotal > 1000);
   }
 }

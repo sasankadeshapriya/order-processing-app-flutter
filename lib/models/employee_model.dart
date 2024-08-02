@@ -1,47 +1,35 @@
 class EmployeeModel {
   final int id;
-  final String? name;
-  final String email;
-  final String? phoneNo;
-  final String? nic;
-  final String? profilePicture;
+  final String name;
+  final String? email; // This is already nullable
+  final String? profilePicture; // Make profilePicture nullable
+  final double commissionRate;
 
   EmployeeModel({
     required this.id,
-    this.name,
-    required this.email,
-    this.phoneNo,
-    this.nic,
-    this.profilePicture,
+    required this.name,
+    this.email,
+    this.profilePicture, // Accept nullable profilePicture
+    required this.commissionRate,
+
   });
 
   factory EmployeeModel.fromJson(Map<String, dynamic> json) {
+    var employeeData =
+        json['employee'] ?? json; // Fallback to root if no employee key
+
     return EmployeeModel(
-      id: json['id'],
-      name: json['name'],
-      email: json['email'],
-      phoneNo: json['phone_no'],
-      nic: json['nic'],
-      profilePicture: json['profile_picture'],
+      id: employeeData['id'],
+      name: employeeData['name'],
+      email: employeeData['email'],
+      profilePicture: employeeData['profile_picture']
+          as String?, // Safely cast as nullable String
+      commissionRate:
+          double.parse(employeeData['commission_rate']?.toString() ?? '0'),
     );
   }
 }
 
 
-class EmpCommissionModel {
-  final double commissionRate;
 
-  EmpCommissionModel({required this.commissionRate});
 
-  factory EmpCommissionModel.fromJson(Map<String, dynamic> json) {
-    var employeeData = json['employee'] ?? {};
-    double parsedRate = 0;
-    try {
-      parsedRate =
-          double.parse(employeeData['commission_rate']?.toString() ?? '0');
-    } catch (e) {
-      throw Exception("Failed to parse commission rate: $e");
-    }
-    return EmpCommissionModel(commissionRate: parsedRate);
-  }
-}

@@ -78,7 +78,7 @@ class InvoiceService {
     }
   }
 
-  Future<Map<String, dynamic>> postInvoiceData(InvoiceModle invoice) async {
+  Future<Map<String, dynamic>> postInvoiceData(InvoiceModel invoice) async {
     const String apiUrl = '$baseUrl/invoice';
     try {
       final String requestBody = jsonEncode(invoice.toJson());
