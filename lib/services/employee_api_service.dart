@@ -32,25 +32,4 @@ class EmployeeService {
       throw Exception('Failed to load employee details');
     }
   }
-
-  static Future<EmpCommissionModel> fetchCommissionDetails(
-      int employeeId) async {
-    final url = '$baseUrl/employee/$employeeId/details';
-    final response = await http.get(Uri.parse(url));
-
-    if (response.statusCode == 200) {
-      final jsonData = jsonDecode(response.body);
-      if (jsonData['employee'] != null) {
-        try {
-          return EmpCommissionModel.fromJson(jsonData);
-        } catch (e) {
-          throw Exception("Error parsing employee commission data: $e");
-        }
-      } else {
-        throw Exception("Employee data not found in the response");
-      }
-    } else {
-      throw Exception('Failed to load employee details: ${response.body}');
-    }
-  }
 }

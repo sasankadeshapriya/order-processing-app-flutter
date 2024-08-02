@@ -1,4 +1,5 @@
-class InvoiceModle {
+class InvoiceModel {
+  final int? id; // Make id optional and nullable
   final String referenceNumber;
   final int clientId;
   final int employeeId;
@@ -6,11 +7,15 @@ class InvoiceModle {
   final double paidAmount;
   final double balance;
   final double discount;
-  final String creditPeriodEndDate;
+  final String creditPeriodEndDate; // Keep as String
   final String paymentOption;
+  final DateTime? createdAt; // Make createdAt optional and nullable
+  final DateTime? updatedAt; // Make updatedAt optional and nullable
+  String? organizationName;
   final List<InvoiceProduct> products;
 
-  InvoiceModle({
+  InvoiceModel({
+    this.id, // Optional parameter
     required this.referenceNumber,
     required this.clientId,
     required this.employeeId,
@@ -18,22 +23,31 @@ class InvoiceModle {
     required this.paidAmount,
     required this.balance,
     required this.discount,
-    required this.creditPeriodEndDate,
+    required this.creditPeriodEndDate, // Keep as required String
     required this.paymentOption,
+    this.createdAt, // Optional parameter
+    this.updatedAt, // Optional parameter
+    this.organizationName,
     required this.products,
   });
 
-  factory InvoiceModle.fromJson(Map<String, dynamic> json) {
-    return InvoiceModle(
-      referenceNumber: json['reference_number'] as String,
-      clientId: json['client_id'] as int,
-      employeeId: json['employee_id'] as int,
-      totalAmount: json['total_amount'] as double,
-      paidAmount: json['paid_amount'] as double,
-      balance: json['balance'] as double,
-      discount: json['discount'] as double,
-      creditPeriodEndDate: json['credit_period_end_date'] as String,
-      paymentOption: json['payment_option'] as String,
+  factory InvoiceModel.fromJson(Map<String, dynamic> json) {
+    return InvoiceModel(
+      id: json['id'],
+      referenceNumber: json['reference_number'],
+      clientId: json['client_id'],
+      employeeId: json['employee_id'],
+      totalAmount: double.parse(json['total_amount']),
+      paidAmount: double.parse(json['paid_amount']),
+      balance: double.parse(json['balance']),
+      discount: double.parse(json['discount']),
+      creditPeriodEndDate: json['credit_period_end_date'], // Keep as String
+      paymentOption: json['payment_option'],
+      createdAt:
+          json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+      updatedAt:
+          json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+      organizationName: json['organization_name'],
       products: (json['products'] as List)
           .map((productJson) => InvoiceProduct.fromJson(productJson))
           .toList(),
@@ -42,6 +56,7 @@ class InvoiceModle {
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'reference_number': referenceNumber,
       'client_id': clientId,
       'employee_id': employeeId,
@@ -49,8 +64,11 @@ class InvoiceModle {
       'paid_amount': paidAmount,
       'balance': balance,
       'discount': discount,
-      'credit_period_end_date': creditPeriodEndDate,
+      'credit_period_end_date': creditPeriodEndDate, // Keep as String
       'payment_option': paymentOption,
+      'createdAt': createdAt?.toIso8601String(), // Optional field
+      'updatedAt': updatedAt?.toIso8601String(), // Optional field
+      'organization_name': organizationName,
       'products': products.map((product) => product.toJson()).toList(),
     };
   }

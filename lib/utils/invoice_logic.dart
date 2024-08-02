@@ -5,7 +5,7 @@ import 'package:logger/logger.dart';
 
 import '../components/alert_dialog.dart';
 import '../models/clients_modle.dart';
-import '../models/invoice_modle.dart'; // Import Invoice and InvoiceProduct
+import '../models/invoice_modle.dart';
 import '../models/payments_modle.dart';
 import '../models/processed_product.dart'; // Import the existing ProcessedProduct model
 import '../models/product_modle.dart';
@@ -28,8 +28,7 @@ class InvoiceLogic {
   PaymentMethod? selectedPaymentMethod;
   Product? selectedProduct;
   Client? selectedClient;
-  late String _token;
-  late int? empId = TokenManager.empId; // change after debug
+  late int? empId = TokenManager.empId;
   String employeeName = '';
   String invoiceErrorMessage = '';
   double? _outstandingBalance = 0.0;
@@ -38,6 +37,7 @@ class InvoiceLogic {
   bool isPartiallyPaid = false;
   double paidAmount = 0.0;
   double totalPaybleAmount = 0.0;
+  int decimalEntryAttempts = 0;
   final Map<int, TextEditingController> _quantityControllers = {};
   double get outstandingBalance => _outstandingBalance ?? 0.0;
 
@@ -45,7 +45,6 @@ class InvoiceLogic {
     clients = [];
     productList = [];
     productQuantities = {};
-    _token = '';
     selectedPaymentMethod = null;
     selectedProduct = null;
     paymentMethods = PaymentMethod.getListFromHardCodedData();
@@ -152,7 +151,7 @@ class InvoiceLogic {
             content: Text(userFriendlyMessage),
             actions: <Widget>[
               TextButton(
-                child: Text('OK'),
+                child: const Text('OK'),
                 onPressed: () => Navigator.of(ctx).pop(),
               ),
             ],
@@ -287,13 +286,6 @@ class InvoiceLogic {
     Logger().i('Total Payable Amount updated: $totalPaybleAmount');
   }
 
-  Future<void> printProductList() async {
-    Logger().d("Printing product list with ${productList.length} items.");
-    for (final product in productList) {
-      Logger().d('Product: ${product.toJson()}');
-    }
-  }
-
   Future<void> processInvoiceData(
     VehicleInventoryService vehicleInventoryService,
     InvoiceService invoiceService,
@@ -318,6 +310,11 @@ class InvoiceLogic {
         sum: price * quantity,
       );
     }).toList();
+  }
+
+  String calculateCreditPeriodEndDate(int creditPeriod) {
+    final endDate = DateTime.now().add(Duration(days: creditPeriod));
+    return DateFormat('yyyy-MM-dd').format(endDate);
   }
 
   Future<void> updateVehicleInventory(
@@ -427,7 +424,12 @@ class InvoiceLogic {
         );
       }).toList();
 
-      final invoice = InvoiceModle(
+      // Ensure creditPeriod is not null before using it
+      final creditPeriod =
+          selectedClient!.creditPeriod ?? 0; // Provide a default value if null
+      final creditPeriodEndDate = calculateCreditPeriodEndDate(creditPeriod);
+
+      final invoice = InvoiceModel(
         referenceNumber: generateInvoiceNumber(),
         clientId: selectedClient!.clientId,
         employeeId: empId!,
@@ -435,8 +437,7 @@ class InvoiceLogic {
         paidAmount: paidAmount,
         balance: outstandingBalance,
         discount: getDiscountAmount(),
-        creditPeriodEndDate:
-            UtilFunctions.getCurrentDateTime(includeTime: true),
+        creditPeriodEndDate: creditPeriodEndDate,
         paymentOption: selectedPaymentMethod!.paymentName.toLowerCase(),
         products: invoiceProducts,
       );
@@ -478,7 +479,9 @@ class InvoiceLogic {
   //Employee commition added function
   Future<void> AddCommission(double totalBillAmount) async {
     try {
-      int empId = 1; // Assuming static for example purposes
+      if (empId == null) {
+        throw Exception("Employee ID is null");
+      } // Assuming static for example purposes
       String date =
           UtilFunctions.getCurrentDateTime(); // Get current date and time
 
@@ -491,7 +494,7 @@ class InvoiceLogic {
       }
 
       var result =
-          await CommissionService.addCommission(empId, date, totalBillAmount);
+          await CommissionService.addCommission(empId!, date, totalBillAmount);
       Logger().i("Commission successfully added/updated: $result");
     } catch (e) {
       Logger().e("Failed to add/update commission: ${e.toString()}");
