@@ -11,6 +11,7 @@ class EmployeeModel {
     this.email,
     this.profilePicture, // Accept nullable profilePicture
     required this.commissionRate,
+
   });
 
   factory EmployeeModel.fromJson(Map<String, dynamic> json) {
@@ -28,3 +29,7 @@ class EmployeeModel {
     );
   }
 }
+
+
+
+

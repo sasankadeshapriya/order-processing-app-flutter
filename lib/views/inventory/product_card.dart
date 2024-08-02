@@ -93,7 +93,7 @@ class ProductCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '${(product.quantity * product.cashPrice).toStringAsFixed(2)}',
+                      (product.quantity * product.cashPrice).toStringAsFixed(2),
                       style: const TextStyle(
                         color: Color(0xFFA3A2A9),
                         fontSize: 12,
@@ -135,7 +135,7 @@ class ProductCard extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                '\Rs.${product.cashPrice.toStringAsFixed(2)}',
+                                'Rs.${product.cashPrice.toStringAsFixed(2)}',
                                 style: const TextStyle(
                                   color: Color(0xFFA3A2A9),
                                   fontSize: 12,
@@ -163,7 +163,7 @@ class ProductCard extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                '\Rs.${product.creditPrice.toStringAsFixed(2)}',
+                                'Rs.${product.creditPrice.toStringAsFixed(2)}',
                                 style: const TextStyle(
                                   color: Color(0xFFA3A2A9),
                                   fontSize: 12,
@@ -191,7 +191,7 @@ class ProductCard extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                '\Rs.${product.checkPrice.toStringAsFixed(2)}',
+                                'Rs.${product.checkPrice.toStringAsFixed(2)}',
                                 style: const TextStyle(
                                   color: Color(0xFFA3A2A9),
                                   fontSize: 12,
@@ -223,7 +223,7 @@ class ProductCard extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                '${product.intialqty.toStringAsFixed(2)}',
+                                product.intialqty.toStringAsFixed(2),
                                 style: const TextStyle(
                                   color: Color(0xFFA3A2A9),
                                   fontSize: 12,
@@ -251,7 +251,7 @@ class ProductCard extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                '${calculateOutStock(product.intialqty, product.quantity).toStringAsFixed(2)}',
+                                calculateOutStock(product.intialqty, product.quantity).toStringAsFixed(2),
                                 style: const TextStyle(
                                   color: Color(0xFFA3A2A9),
                                   fontSize: 12,
@@ -279,7 +279,7 @@ class ProductCard extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                '${product.quantity.toStringAsFixed(2)}',
+                                product.quantity.toStringAsFixed(2),
                                 style: const TextStyle(
                                   color: Color(0xFFA3A2A9),
                                   fontSize: 12,
