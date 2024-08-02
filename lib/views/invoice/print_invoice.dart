@@ -6,9 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 
 import '../../components/custom_button.dart';
-import '../../models/employee_model.dart';
 import '../../models/print_setting_modle.dart';
-import '../../services/employee_api_service.dart';
 import '../../services/invoice_api_service.dart';
 import '../../services/vehicle_inventory_service.dart';
 import '../../utils/app_colors.dart';
@@ -717,17 +715,19 @@ class _PrintInvoiceState extends State<PrintInvoice> {
       return;
     }
 
-    try {
-      EmployeeModel employeeDetails =
-          await EmployeeService.getEmployeeDetails(employeeId);
-      double commissionRate = employeeDetails.commissionRate;
-      double commissionAmount = totalBillAmount * (commissionRate / 100.0);
 
-      await widget.invoiceLogic.AddCommission(commissionAmount);
-      Logger().i(
-          "Commission added for total bill amount: $totalBillAmount with rate: $commissionRate% resulting in commission: $commissionAmount");
-    } catch (e) {
-      Logger().e("Failed to finalize invoice: $e");
-    }
+    // try {
+    //   EmployeeModel commissionDetails =
+    //       await EmployeeService.fetchCommissionDetails(employeeId);
+    //   double commissionRate = commissionDetails.commissionRate;
+    //   double commissionAmount = totalBillAmount * (commissionRate / 100.0);
+    //
+    //   await widget.invoiceLogic.AddCommission(commissionAmount);
+    //   Logger().i(
+    //       "Commission added for total bill amount: $totalBillAmount with rate: $commissionRate% resulting in commission: $commissionAmount");
+    // } catch (e) {
+    // Logger().e("Failed to finalize invoice: $e");
+    //}
+
   }
 }
