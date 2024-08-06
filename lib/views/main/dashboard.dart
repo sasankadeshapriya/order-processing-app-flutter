@@ -11,8 +11,10 @@ import 'package:order_processing_app/views/assignment/assignment_list.dart';
 import 'package:order_processing_app/views/main/drawer.dart';
 import 'package:order_processing_app/views/map/map_page.dart';
 import 'package:order_processing_app/views/reports/report_list_page.dart';
+import 'package:provider/provider.dart';
 
 import '../../services/token_manager.dart';
+import '../../utils/invoice_logic.dart';
 import '../clients/client_form.dart';
 import '../inventory/product_list.dart';
 import '../invoice/invoicePage.dart';
@@ -109,7 +111,12 @@ class _UserDashboardState extends State<UserDashboard>
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const InvoicePage()),
+              MaterialPageRoute(
+                builder: (context) => ChangeNotifierProvider(
+                  create: (_) => InvoiceLogic(),
+                  child: InvoicePage(),
+                ),
+              ),
             );
           },
           child: const Icon(Icons.receipt_long_outlined,

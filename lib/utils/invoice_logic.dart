@@ -2,25 +2,23 @@ import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
+import 'package:order_processing_app/models/invoice_modle.dart';
 
 import '../components/alert_dialog.dart';
 import '../models/clients_modle.dart';
-import '../models/invoice_modle.dart';
 import '../models/payments_modle.dart';
 import '../models/processed_product.dart'; // Import the existing ProcessedProduct model
 import '../models/product_modle.dart';
 import '../models/product_response.dart';
 import '../models/vehicle_inventory_modle.dart';
 import '../services/client_api_service.dart';
-import '../services/commission_api_service.dart';
 import '../services/invoice_api_service.dart';
 import '../services/product_api_service.dart';
 import '../services/token_manager.dart';
 import '../services/vehicle_inventory_service.dart';
 import '../views/main/dashboard.dart';
-import 'util_functions.dart';
 
-class InvoiceLogic {
+class InvoiceLogic extends ChangeNotifier {
   late List<Client> clients;
   late List<Product> productList;
   late Map<Product, double> productQuantities;
@@ -32,14 +30,20 @@ class InvoiceLogic {
   String employeeName = '';
   String invoiceErrorMessage = '';
   double? _outstandingBalance = 0.0;
-  double? totalPrice = 0.0;
+  double _tempOutstandingBalance = 0.0;
+  //double? totalPrice = 0.0;
+  double _totalPriceWithDiscount = 0.0;
+  double _tempTotalPriceWithDiscount = 0.0;
   bool isFullyPaid = false;
   bool isPartiallyPaid = false;
   double paidAmount = 0.0;
-  double totalPaybleAmount = 0.0;
+  double totalPayableAmount = 0.0;
   int decimalEntryAttempts = 0;
+  bool showPaymentFields = false;
+  bool isFullCreditApplied = false;
+  bool isFullPaidApplied = false;
+  bool _isOutstandingBalancePaid = false;
   final Map<int, TextEditingController> _quantityControllers = {};
-  double get outstandingBalance => _outstandingBalance ?? 0.0;
 
   InvoiceLogic() {
     clients = [];
@@ -50,15 +54,64 @@ class InvoiceLogic {
     paymentMethods = PaymentMethod.getListFromHardCodedData();
   }
 
+  bool get isOutstandingBalancePaid => _isOutstandingBalancePaid;
+
+  set isOutstandingBalancePaid(bool value) {
+    if (_isOutstandingBalancePaid != value) {
+      _isOutstandingBalancePaid = value;
+      applyOutstandingBalanceChanges();
+      notifyListeners();
+      calculateTotalPriceWithDiscount(); // Recalculate whenever the balance status changes
+      notifyListeners();
+    }
+  }
+
+  double get outstandingBalance => _outstandingBalance ?? 0.0;
+  double get tempOutstandingBalance => _tempOutstandingBalance;
+  double get totalPriceWithDiscount => _totalPriceWithDiscount;
+  double get tempTotalPriceWithDiscount => _tempTotalPriceWithDiscount;
+
+  set outstandingBalance(double value) {
+    _outstandingBalance = value;
+    notifyListeners();
+  }
+
+  void updateTempOutstandingBalance(double value) {
+    _tempOutstandingBalance = value;
+    notifyListeners();
+  }
+
+  void resetTempBalanceToOriginal() {
+    _tempOutstandingBalance = _outstandingBalance!;
+    notifyListeners();
+  }
+
+  void applyOutstandingBalanceChanges() {
+    _outstandingBalance = _tempOutstandingBalance;
+    notifyListeners();
+  }
+
+  void resetTempTotalPriceToOriginal() {
+    _tempTotalPriceWithDiscount = _totalPriceWithDiscount;
+    notifyListeners();
+  }
+
+  void updateTempTotalPriceWithDiscount(double value) {
+    _tempTotalPriceWithDiscount = double.parse(value.toStringAsFixed(2));
+    notifyListeners();
+  }
+
+  void applyPriceChanges() {
+    _totalPriceWithDiscount =
+        double.parse(_tempTotalPriceWithDiscount.toStringAsFixed(2));
+    notifyListeners();
+  }
+
   void updateSelectedPaymentMethod(String paymentMethodName) {
     selectedPaymentMethod = paymentMethods.firstWhere(
       (paymentMethod) => paymentMethod.paymentName == paymentMethodName,
       orElse: () => selectedPaymentMethod as PaymentMethod,
     );
-  }
-
-  set outstandingBalance(double value) {
-    _outstandingBalance = value;
   }
 
   bool canPrintInvoice() {
@@ -111,10 +164,15 @@ class InvoiceLogic {
   Future<void> getOutstandingBalance(int clientId) async {
     try {
       _outstandingBalance = await InvoiceService.getClientBalance(clientId);
+      _tempOutstandingBalance =
+          _outstandingBalance ?? 0.0; // Initialize temp with fetched value
+      notifyListeners();
       Logger().i('Outstanding balance updated: $_outstandingBalance');
     } catch (e) {
       Logger().e('Error fetching client balance: $e');
       _outstandingBalance = 0;
+      _tempOutstandingBalance = 0;
+      notifyListeners();
     }
   }
 
@@ -147,7 +205,7 @@ class InvoiceLogic {
         showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
-            title: Text('Error'),
+            title: const Text('Error'),
             content: Text(userFriendlyMessage),
             actions: <Widget>[
               TextButton(
@@ -218,16 +276,22 @@ class InvoiceLogic {
 
   void increaseQuantity(Product product) {
     productQuantities[product] = (productQuantities[product] ?? 0) + 1;
+    calculateTotalPriceWithDiscount();
+    notifyListeners();
   }
 
   void decreaseQuantity(Product product, {double decrement = 1.0}) {
     final currentQuantity = productQuantities[product] ?? 0.0;
     productQuantities[product] =
         currentQuantity > decrement ? currentQuantity - decrement : 0.0;
+    calculateTotalPriceWithDiscount();
+    notifyListeners();
   }
 
   void updateProductQuantity(Product product, double newQuantity) {
     productQuantities[product] = newQuantity;
+    calculateTotalPriceWithDiscount();
+    notifyListeners();
   }
 
   void addSelectedProduct(Product product) {
@@ -238,6 +302,10 @@ class InvoiceLogic {
   void removeSelectedProduct(Product product) {
     selectedProduct = null;
     productQuantities.remove(product);
+    calculateTotalPriceWithDiscount();
+    notifyListeners();
+    resetTempBalanceToOriginal();
+    notifyListeners();
   }
 
   double getPrice(Product product, PaymentMethod paymentMethod) {
@@ -254,36 +322,33 @@ class InvoiceLogic {
   }
 
   double getTotalBillAmount() {
-    return productQuantities.entries.fold(0.0, (total, entry) {
+    double total = productQuantities.entries.fold(0.0, (total, entry) {
       final product = entry.key;
       final quantity = entry.value;
       final price = getPrice(product, selectedPaymentMethod!);
       return total + (price * quantity);
     });
+    return double.parse(
+        total.toStringAsFixed(2)); // Round the total to two decimal places
   }
 
   double getDiscountAmount() {
     if (selectedClient != null && selectedClient!.discount > 0) {
       final totalBill = getTotalBillAmount();
-      return totalBill * (selectedClient!.discount / 100);
+      double discount = totalBill * (selectedClient!.discount / 100);
+      return double.parse(discount
+          .toStringAsFixed(2)); // Round the discount to two decimal places
     }
     return 0.0;
   }
 
-  Future<double> getTotalPriceWithDiscount() async {
+  Future<void> calculateTotalPriceWithDiscount() async {
     final totalBill = getTotalBillAmount();
     final discount = getDiscountAmount();
-    return totalBill - discount + (outstandingBalance);
-  }
-
-  Future<void> calculateTotalPaybleAmount() async {
-    totalPaybleAmount = await getTotalPriceWithDiscount();
-    //Logger().i('Total Payable Amount: $totalPaybleAmount');
-  }
-
-  void updateTotalPaybleAmount(double newTotalPaybleAmount) {
-    totalPaybleAmount = newTotalPaybleAmount;
-    Logger().i('Total Payable Amount updated: $totalPaybleAmount');
+    final outstanding = isOutstandingBalancePaid ? outstandingBalance : 0.0;
+    _totalPriceWithDiscount = totalBill - discount + outstanding;
+    _tempTotalPriceWithDiscount = _totalPriceWithDiscount;
+    notifyListeners();
   }
 
   Future<void> processInvoiceData(
@@ -413,7 +478,8 @@ class InvoiceLogic {
     BuildContext context,
   ) async {
     try {
-      final totalAmount = await getTotalPriceWithDiscount();
+      final totalAmount = tempTotalPriceWithDiscount;
+      ();
 
       final invoiceProducts = processedProducts.map((processedProduct) {
         return InvoiceProduct(
@@ -429,7 +495,7 @@ class InvoiceLogic {
           selectedClient!.creditPeriod ?? 0; // Provide a default value if null
       final creditPeriodEndDate = calculateCreditPeriodEndDate(creditPeriod);
 
-      final invoice = InvoiceModel(
+      final invoice = InvoiceModle(
         referenceNumber: generateInvoiceNumber(),
         clientId: selectedClient!.clientId,
         employeeId: empId!,
@@ -476,28 +542,246 @@ class InvoiceLogic {
     }
   }
 
-  //Employee commition added function
-  Future<void> AddCommission(double totalBillAmount) async {
-    try {
-      if (empId == null) {
-        throw Exception("Employee ID is null");
-      } // Assuming static for example purposes
-      String date =
-          UtilFunctions.getCurrentDateTime(); // Get current date and time
+  //================================================================================================
 
-      Logger().i(
-          "Attempting to add/update commission with amount: $totalBillAmount");
+  Future<void> markInvoiceAsFullyPaid(
+      BuildContext context,
+      TextEditingController bankController,
+      TextEditingController chequeNumberController,
+      TextEditingController amountController,
+      TextEditingController dateController,
+      [String customMessage =
+          "The invoice has been fully paid."] // Optional with default value
+      ) async {
+    isFullyPaid = true;
+    isPartiallyPaid = false;
+    paidAmount = getTotalBillAmount() - getDiscountAmount();
+    totalPayableAmount = paidAmount;
+    showPaymentFields = true;
 
-      if (totalBillAmount <= 0) {
-        Logger().w("Commission amount is zero or negative. Aborting API call.");
-        return;
-      }
+    AwesomeDialog(
+      context: context,
+      dialogType: DialogType.success,
+      headerAnimationLoop: false,
+      animType: AnimType.bottomSlide,
+      title: 'Invoice Fully Paid',
+      desc: customMessage, // Use the passed or default message here
+      btnOkOnPress: () {},
+    ).show();
+  }
 
-      var result =
-          await CommissionService.addCommission(empId!, date, totalBillAmount);
-      Logger().i("Commission successfully added/updated: $result");
-    } catch (e) {
-      Logger().e("Failed to add/update commission: ${e.toString()}");
+  void clearPaymentFields(
+      TextEditingController bankController,
+      TextEditingController chequeNumberController,
+      TextEditingController amountController,
+      TextEditingController dateController) {
+    bankController.clear();
+    chequeNumberController.clear();
+    amountController.clear();
+    dateController.clear();
+    showPaymentFields = false;
+  }
+
+  Future<bool> validateAmount(double amount) async {
+    double totalPriceWithDiscount =
+        double.parse(tempTotalPriceWithDiscount.toStringAsFixed(2));
+    Logger().w(
+        '${totalPriceWithDiscount.toStringAsFixed(2)}'); // Logging the price formatted to two decimals
+    Logger().f(
+        '${amount.toStringAsFixed(2)}'); // Logging the amount formatted to two decimals
+    return amount <= totalPriceWithDiscount;
+  }
+
+  //await getTotalPriceWithDiscount();
+  bool validateDate(DateTime date) {
+    return date.isAfter(DateTime.now());
+  }
+
+  // New method to handle logic based on payment method
+  Future<void> handleFullPayment(
+      BuildContext context,
+      String paymentMethod,
+      TextEditingController bankController,
+      TextEditingController chequeNumberController,
+      TextEditingController amountController,
+      TextEditingController dateController) async {
+    switch (paymentMethod) {
+      case 'Cash':
+        if (isOutstandingBalancePaid) {
+          Logger().f("inside fullpaid cash switch");
+
+          updateTempOutstandingBalance(0.0);
+        } else {
+          resetTempBalanceToOriginal();
+        }
+        markInvoiceAsFullyPaid(context, bankController, chequeNumberController,
+            amountController, dateController);
+        showPaymentFields = false; // Allow to add partial payment
+        break;
+
+      case 'Credit':
+        if (isOutstandingBalancePaid) {
+          Logger().f("inside fullpaid credit switch");
+          isFullyPaid = true;
+          updateTempOutstandingBalance(tempTotalPriceWithDiscount);
+          updateTempTotalPriceWithDiscount(0.0);
+
+          Logger().f("isoutbalnce paid true $outstandingBalance, $paidAmount");
+        } else {
+          updateTempOutstandingBalance(
+              outstandingBalance + tempTotalPriceWithDiscount);
+          updateTempTotalPriceWithDiscount(0.0);
+          Logger()
+              .f("isoutbalnce paid false :$outstandingBalance, $paidAmount");
+        }
+        markInvoiceAsFullyPaid(
+            context,
+            bankController,
+            chequeNumberController,
+            amountController,
+            dateController,
+            "The invoice has been set as fully credit ");
+        showPaymentFields = false; // Allow to add partial payment
+        break;
+
+      case 'Cheque':
+        if (isOutstandingBalancePaid) {
+          Logger().f("inside fullpaid cheque switch");
+
+          updateTempOutstandingBalance(0.0);
+          tempTotalPriceWithDiscount;
+        } else {
+          tempOutstandingBalance;
+          tempTotalPriceWithDiscount;
+        }
+        amountController.text = tempTotalPriceWithDiscount.toStringAsFixed(2);
+        showPaymentFields = true;
+        break;
+
+      default:
+        break;
     }
+    FocusScope.of(context).requestFocus(FocusNode()); // Hide keyboard
+  }
+
+  Future<void> handlePartialPayment(
+      BuildContext context, TextEditingController amountController) async {
+    double enteredAmount = double.tryParse(amountController.text) ?? 0.0;
+    double payableTotal = tempTotalPriceWithDiscount;
+
+    Logger().i(
+        'Entered Amount: $enteredAmount, Payable Total: $payableTotal, Payment Method: ${selectedPaymentMethod?.paymentName}, ispaidoutbalance: $isOutstandingBalancePaid');
+
+    switch (selectedPaymentMethod?.paymentName) {
+      case 'Cash':
+        if (enteredAmount != payableTotal) {
+          AleartBox.showAleart(
+            context,
+            DialogType.error,
+            'Invalid Payment',
+            'Full payment is required when paying with cash. Partial payments are not allowed.',
+          );
+          return; // Prevent further processing
+        }
+        showPaymentFields = false;
+        break;
+
+      case 'Credit':
+        if (isOutstandingBalancePaid) {
+          if (enteredAmount == payableTotal) {
+            isFullyPaid = true;
+            isPartiallyPaid = false;
+            updateTempOutstandingBalance(0.0);
+          } else {
+            isFullyPaid = false;
+            isPartiallyPaid = true;
+            _tempOutstandingBalance = payableTotal - enteredAmount;
+            updateTempTotalPriceWithDiscount(enteredAmount);
+          }
+        } else {
+          if (enteredAmount == payableTotal) {
+            isFullyPaid = true;
+            isPartiallyPaid = false;
+            _tempOutstandingBalance = payableTotal - enteredAmount;
+          } else if (enteredAmount < payableTotal) {
+            isFullyPaid = false;
+            isPartiallyPaid = true;
+            updateTempOutstandingBalance(
+                (payableTotal - enteredAmount) + outstandingBalance);
+            updateTempTotalPriceWithDiscount(enteredAmount);
+          }
+        }
+        break;
+
+      case 'Cheque':
+        if (isOutstandingBalancePaid) {
+          if (enteredAmount < payableTotal) {
+            isFullyPaid = false;
+            isPartiallyPaid = true;
+            updateTempOutstandingBalance(enteredAmount);
+            updateTempTotalPriceWithDiscount(payableTotal - enteredAmount);
+          } else if (enteredAmount == payableTotal) {
+            isFullyPaid = true;
+            isPartiallyPaid = false;
+            updateTempOutstandingBalance(0.0);
+          }
+        } else if (enteredAmount < payableTotal) {
+          isFullyPaid = false;
+          isPartiallyPaid = true;
+          updateTempOutstandingBalance(
+              (payableTotal - enteredAmount) + outstandingBalance);
+          updateTempTotalPriceWithDiscount(enteredAmount);
+        } else if (enteredAmount == payableTotal) {
+          isFullyPaid = true;
+          isPartiallyPaid = false;
+          updateTempOutstandingBalance(0.0);
+        }
+        break;
+
+      default:
+        // Handle unknown or unspecified payment method
+        AleartBox.showAleart(
+          context,
+          DialogType.error,
+          'Payment Method Error',
+          'The selected payment method is not supported.',
+        );
+        break;
+    }
+
+    // Logic to handle the new balance and update the database can go here...
+    AwesomeDialog(
+      context: context,
+      dialogType: DialogType.success,
+      headerAnimationLoop: false,
+      animType: AnimType.bottomSlide,
+      title: 'Payment Added',
+      desc: 'The partial payment has been recorded.',
+      btnOkOnPress: () {},
+    ).show();
+    FocusScope.of(context).requestFocus(FocusNode()); // Hide keyboard
+  }
+
+  // off if onece click full paid now or full credit button
+  void applyFullCredit() {
+    if (!isFullCreditApplied) {
+      // Logic to apply full credit
+      isFullCreditApplied = true;
+      notifyListeners();
+    }
+  }
+
+  void applyFullPaid() {
+    if (!isFullPaidApplied) {
+      // Logic to apply full payment
+      isFullPaidApplied = true;
+      notifyListeners();
+    }
+  }
+
+  void cancelActions() {
+    isFullCreditApplied = false;
+    isFullPaidApplied = false; // Reset both flags
+    notifyListeners();
   }
 }

@@ -1,4 +1,4 @@
-class InvoiceModel {
+class InvoiceModle {
   final int? id; // Make id optional and nullable
   final String referenceNumber;
   final int clientId;
@@ -14,7 +14,7 @@ class InvoiceModel {
   String? organizationName;
   final List<InvoiceProduct> products;
 
-  InvoiceModel({
+  InvoiceModle({
     this.id, // Optional parameter
     required this.referenceNumber,
     required this.clientId,
@@ -31,8 +31,8 @@ class InvoiceModel {
     required this.products,
   });
 
-  factory InvoiceModel.fromJson(Map<String, dynamic> json) {
-    return InvoiceModel(
+  factory InvoiceModle.fromJson(Map<String, dynamic> json) {
+    return InvoiceModle(
       id: json['id'],
       referenceNumber: json['reference_number'],
       clientId: json['client_id'],

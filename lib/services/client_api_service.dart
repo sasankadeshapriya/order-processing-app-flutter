@@ -83,16 +83,16 @@ class ClientService {
   static Future<List<Client>> getClients() async {
     final response = await http.get(Uri.parse('$baseUrl/client'));
 
-    Logger().i('Fetching clients from $baseUrl/client');
-    Logger().i('Response status code: ${response.statusCode}');
-    Logger().i('Response body: ${response.body}');
+    //Logger().i('Fetching clients from $baseUrl/client');
+    //Logger().i('Response status code: ${response.statusCode}');
+    //Logger().i('Response body: ${response.body}');
 
     if (response.statusCode == 200) {
       final List<dynamic> clientJson = json.decode(response.body);
-      Logger().i('Parsed JSON: $clientJson');
+      //Logger().i('Parsed JSON: $clientJson');
 
       final clients = clientJson.map((json) => Client.fromJson(json)).toList();
-      Logger().i('Mapped clients: $clients');
+      //Logger().i('Mapped clients: $clients');
 
       return clients;
     } else {
