@@ -17,25 +17,25 @@ class ProductService {
         Uri.parse('$baseUrl/fetchdata/$empId/$currentDate'),
       );
 
-      Logger().w('Received response with status code: ${response.statusCode}');
+      //Logger().w('Received response with status code: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        Logger().w('Response data decoded successfully');
+        // Logger().w('Response data decoded successfully');
 
         final employeeName = responseData['employee_name'];
-        Logger().w('Employee name: $employeeName');
+        //  Logger().w('Employee name: $employeeName');
 
         final vehicleInventory = responseData['vehicle_inventory'];
         if (vehicleInventory != null) {
-          Logger().w('Vehicle inventory data found, processing products');
+          //  Logger().w('Vehicle inventory data found, processing products');
 
           List<Product> products = vehicleInventory.map<Product>((vehicle) {
             final productData = vehicle['Product'];
             final batches = productData['Batches'];
             final firstBatch = batches.isNotEmpty ? batches.first : {};
 
-            Logger().w('Processing product: ${productData['name']}');
+            //  Logger().w('Processing product: ${productData['name']}');
 
             return Product(
                 employeeName: employeeName,
@@ -63,11 +63,11 @@ class ProductService {
                 );
           }).toList();
 
-          Logger().w('Successfully processed ${products.length} products');
+          //Logger().w('Successfully processed ${products.length} products');
           return ProductResponse(
               employeeName: employeeName, products: products);
         } else {
-          Logger().w('No vehicle inventories found');
+          // Logger().w('No vehicle inventories found');
           return ProductResponse(employeeName: employeeName, products: []);
         }
       } else {

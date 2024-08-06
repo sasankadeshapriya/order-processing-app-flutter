@@ -1,15 +1,17 @@
 import 'dart:io';
+
+import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:order_processing_app/models/employee_model.dart';
 import 'package:order_processing_app/services/employee_api_service.dart';
 import 'package:order_processing_app/services/token_manager.dart';
 import 'package:order_processing_app/utils/app_colors.dart';
 import 'package:order_processing_app/views/clients/image_handller.dart';
-import 'package:order_processing_app/models/employee_model.dart';
 import 'package:order_processing_app/views/main/dashboard.dart';
 import 'package:order_processing_app/widgets/profile_picture_widget.dart';
+
 import '../../components/custom_button.dart';
-import 'package:awesome_dialog/awesome_dialog.dart';
 
 class EmployeeUpdate extends StatefulWidget {
   const EmployeeUpdate({super.key});
@@ -46,6 +48,7 @@ class _EmployeeUpdateState extends State<EmployeeUpdate> {
       _nameController.text = employee.name ?? '';
       _phoneController.text = employee.phoneNo ?? '';
       _nicController.text = employee.nic ?? '';
+
       setState(() {
         _logoImagePath = employee.profilePicture;
       });
@@ -64,7 +67,8 @@ class _EmployeeUpdateState extends State<EmployeeUpdate> {
     });
     try {
       await EmployeeService.updateProfilePicture(empId, imageFile);
-      EmployeeModel updatedEmployee = await EmployeeService.getEmployeeDetails(empId);
+      EmployeeModel updatedEmployee =
+          await EmployeeService.getEmployeeDetails(empId);
       setState(() {
         _logoImagePath = updatedEmployee.profilePicture;
       });
@@ -119,11 +123,13 @@ class _EmployeeUpdateState extends State<EmployeeUpdate> {
         empId,
         name: _nameController.text.isNotEmpty ? _nameController.text : null,
         nic: _nicController.text.isNotEmpty ? _nicController.text : null,
-        phoneNo: _phoneController.text.isNotEmpty ? _phoneController.text : null,
+        phoneNo:
+            _phoneController.text.isNotEmpty ? _phoneController.text : null,
       );
 
       // Fetch updated employee details
-      EmployeeModel updatedEmployee = await EmployeeService.getEmployeeDetails(empId);
+      EmployeeModel updatedEmployee =
+          await EmployeeService.getEmployeeDetails(empId);
       setState(() {
         _nameController.text = updatedEmployee.name ?? '';
         _phoneController.text = updatedEmployee.phoneNo ?? '';
@@ -154,7 +160,8 @@ class _EmployeeUpdateState extends State<EmployeeUpdate> {
   void _handleUpdate() {
     if (!isLoading) {
       setState(() {
-        _nameError = _nameController.text.isEmpty ? 'Please enter a name' : null;
+        _nameError =
+            _nameController.text.isEmpty ? 'Please enter a name' : null;
         _phoneError = _validatePhoneNumber(_phoneController.text);
         _nicError = _validateNic(_nicController.text);
       });
@@ -268,7 +275,8 @@ class _EmployeeUpdateState extends State<EmployeeUpdate> {
                         imagePath: _logoImagePath,
                         isUploading: isUploading,
                         onTap: () async {
-                          String? imagePath = await openImagePickerBottomSheet(context, ImageType.profile);
+                          String? imagePath = await openImagePickerBottomSheet(
+                              context, ImageType.profile);
                           if (imagePath != null) {
                             File imageFile = File(imagePath);
                             await _updateProfilePicture(imageFile);
@@ -281,7 +289,6 @@ class _EmployeeUpdateState extends State<EmployeeUpdate> {
                       controller: _nameController,
                       labelText: 'User name',
                       hintText: 'Enter User name',
-
                     ),
                     const SizedBox(height: 20),
                     _buildTextFormField(

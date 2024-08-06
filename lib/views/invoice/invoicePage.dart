@@ -1,12 +1,15 @@
 import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:bluetooth_print/bluetooth_print.dart';
+import 'package:bluetooth_print/bluetooth_print_model.dart';
 import 'package:expansion_tile_card/expansion_tile_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
+import 'package:provider/provider.dart';
+import 'package:toggle_switch/toggle_switch.dart';
 
 import '../../components/alert_dialog.dart';
-import '../../components/custom_button.dart';
 import '../../components/custom_widget.dart';
 import '../../models/clients_modle.dart';
 import '../../models/payments_modle.dart';
@@ -27,11 +30,11 @@ class InvoicePage extends StatefulWidget {
 }
 
 class _InvoicePageState extends State<InvoicePage> {
-  final InvoiceLogic invoiceLogic = InvoiceLogic();
+  late InvoiceLogic invoiceLogic;
+  late final PrintInvoice printInvoice;
   final TextEditingController clientController = TextEditingController();
   final TextEditingController productController = TextEditingController();
   final TextEditingController paymentController = TextEditingController();
-  final TextEditingController _amountController = TextEditingController();
   final TextEditingController bankController = TextEditingController();
   final TextEditingController chequeNumberController = TextEditingController();
   final TextEditingController amountController = TextEditingController();
@@ -39,19 +42,24 @@ class _InvoicePageState extends State<InvoicePage> {
   String? selectedBank;
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  bool showPaymentFields = false;
-
   int empId = TokenManager.empId ?? 1;
+  BluetoothPrint bluetoothPrint = BluetoothPrint.instance;
+  bool _connected = false;
+  bool isLoading = false;
+  BluetoothDevice? _device;
+  String tips = 'No device connected';
 
   @override
   void initState() {
     super.initState();
+    invoiceLogic = Provider.of<InvoiceLogic>(context, listen: false);
+    printInvoice = PrintInvoice();
+    printInvoice.setInvoiceLogic(invoiceLogic);
     fetchProductsAndUpdateUI();
   }
 
   Future<void> fetchProductsAndUpdateUI() async {
     await invoiceLogic.fetchClients(context);
-    // Assuming empId and currentDate are correctly set
     await invoiceLogic.fetchProductDetails(
         empId, UtilFunctions.getCurrentDateTime(), context);
     Logger()
@@ -63,7 +71,6 @@ class _InvoicePageState extends State<InvoicePage> {
     double width = MediaQuery.of(context).size.width - 16.0;
     return GestureDetector(
       onTap: () {
-        // Dismiss the keyboard when tapped outside of the dropdown list
         FocusScope.of(context).requestFocus(FocusNode());
       },
       child: Scaffold(
@@ -113,13 +120,12 @@ class _InvoicePageState extends State<InvoicePage> {
                         _buildProductDropdown(width),
                         const SizedBox(height: 20),
                         _buildProductList(),
-                        //const SizedBox(height: 10),
                         _buildTotalSection(),
                         const SizedBox(height: 20),
                         _buildAddPaymentSection(),
                         const SizedBox(height: 20),
                         Expanded(child: Container()), // Pushes button to bottom
-                        Center(child: _buildPrintInvoiceButton()),
+                        //Center(child: _buildPrintInvoiceButton()),
                         const SizedBox(height: 20),
                       ],
                     ),
@@ -156,8 +162,6 @@ class _InvoicePageState extends State<InvoicePage> {
       },
       dropdownMenuEntries: invoiceLogic.clients.map<DropdownMenuEntry<Client>>(
         (Client client) {
-          //Logger().w("Building dropdown entry for client: ${client.organizationName}");
-
           return DropdownMenuEntry<Client>(
             value: client,
             label: client.organizationName ?? 'Unknown',
@@ -172,14 +176,12 @@ class _InvoicePageState extends State<InvoicePage> {
     return GestureDetector(
       onTap: () {
         if (invoiceLogic.selectedClient == null) {
-          // Show error alert if no client is selected
           AleartBox.showAleart(context, DialogType.error, 'Selection Required',
               'Please select a client first.');
         }
       },
       child: AbsorbPointer(
-        absorbing: invoiceLogic.selectedClient ==
-            null, // Prevent interaction if no client is selected
+        absorbing: invoiceLogic.selectedClient == null,
         child: DropdownMenu<PaymentMethod>(
           controller: paymentController,
           width: width,
@@ -197,6 +199,7 @@ class _InvoicePageState extends State<InvoicePage> {
           onSelected: (PaymentMethod? paymentMethod) {
             setState(() {
               invoiceLogic.selectedPaymentMethod = paymentMethod;
+              invoiceLogic.calculateTotalPriceWithDiscount();
             });
           },
           dropdownMenuEntries:
@@ -219,7 +222,6 @@ class _InvoicePageState extends State<InvoicePage> {
       onTap: () {
         if (invoiceLogic.selectedClient == null ||
             invoiceLogic.selectedPaymentMethod == null) {
-          // Use custom AleartBox to show error if client or payment method is not selected
           AleartBox.showAleart(context, DialogType.error, 'Selection Required',
               'Please select a client and a payment method first.');
         }
@@ -243,6 +245,7 @@ class _InvoicePageState extends State<InvoicePage> {
               invoiceLogic.selectedProduct = product;
               if (product != null) {
                 invoiceLogic.addSelectedProduct(product);
+                invoiceLogic.calculateTotalPriceWithDiscount();
               }
             });
           },
@@ -358,7 +361,6 @@ class _InvoicePageState extends State<InvoicePage> {
 
                   setState(() {});
                 } else {
-                  // Show alert when trying to decrease below 0.5
                   AleartBox.showAleart(
                     context,
                     DialogType.warning,
@@ -389,21 +391,15 @@ class _InvoicePageState extends State<InvoicePage> {
                   FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                 ],
                 onChanged: (newValue) {
-                  // Add a leading zero if the input starts with a decimal point
                   if (newValue.startsWith('.')) {
                     newValue = '0$newValue';
                   }
 
-                  // Validate input against available stock
                   double? quantity = double.tryParse(newValue);
                   if (quantity != null) {
                     if (product.measurementUnit == 'pcs') {
-                      // Check if the entered value is a decimal
                       if (quantity % 1 != 0) {
-                        // Increment the decimal entry attempts counter
                         invoiceLogic.decimalEntryAttempts++;
-
-                        // Show warning message if more than one decimal entry attempt
                         if (invoiceLogic.decimalEntryAttempts >= 3) {
                           AleartBox.showAleart(
                             context,
@@ -412,8 +408,7 @@ class _InvoicePageState extends State<InvoicePage> {
                             'Decimal values are not allowed for pieces (pcs)',
                           );
                         }
-
-                        // Round to the nearest integer
+                        invoiceLogic.decimalEntryAttempts = 0;
                         int roundedQuantity = quantity.round();
                         controller.text = roundedQuantity.toString();
                         quantity = roundedQuantity.toDouble();
@@ -421,13 +416,11 @@ class _InvoicePageState extends State<InvoicePage> {
                     }
 
                     if (quantity > product.quantity) {
-                      // If entered quantity exceeds available stock, set it to maximum available
                       controller.text = product.quantity.toStringAsFixed(
                         product.quantity.truncateToDouble() == product.quantity
                             ? 0
                             : 1,
                       );
-                      // Show alert for insufficient stock
                       AleartBox.showAleart(
                         context,
                         DialogType.warning,
@@ -435,7 +428,6 @@ class _InvoicePageState extends State<InvoicePage> {
                         'The entered quantity exceeds the available stock (${product.quantity})',
                       );
                     } else {
-                      // Update quantity if within available stock
                       invoiceLogic.updateProductQuantity(product, quantity);
                       setState(() {});
                     }
@@ -449,13 +441,11 @@ class _InvoicePageState extends State<InvoicePage> {
                 double increment = 1;
                 double newQuantity = currentQuantity + increment;
                 if (newQuantity <= product.quantity) {
-                  // Only update the text field and quantity if the new quantity is within the available quantity
                   controller.text = newQuantity.toStringAsFixed(
                       newQuantity.truncateToDouble() == newQuantity ? 0 : 1);
                   invoiceLogic.updateProductQuantity(product, newQuantity);
                   setState(() {});
                 } else {
-                  // Show alert when trying to increase beyond available stock
                   controller.text = product.quantity.toStringAsFixed(
                       product.quantity.truncateToDouble() == product.quantity
                           ? 0
@@ -481,133 +471,134 @@ class _InvoicePageState extends State<InvoicePage> {
   }
 
   Widget _buildTotalSection() {
-    double totalBillAmount = invoiceLogic.getTotalBillAmount();
-    double discountAmount = invoiceLogic.getDiscountAmount();
+    return Consumer<InvoiceLogic>(
+      builder: (context, invoiceLogic, child) {
+        double totalBillAmount = invoiceLogic.getTotalBillAmount();
+        double discountAmount = invoiceLogic.getDiscountAmount();
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15.0),
-        border: Border.all(
-          color: AppColor.primaryColor, // Choose your desired border color
-          width: 1.3, // Choose the width of the border
-        ),
-        color: AppColor.backgroundColor,
-      ),
-      child: Container(
-        width: MediaQuery.of(context).size.width,
-        height: MediaQuery.of(context).size.height * 0.18,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text("Total Bill",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: AppColor.primaryColor)),
-                Text("Rs.${totalBillAmount.toStringAsFixed(2)}",
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: AppColor.primaryColor)),
-              ],
+        return DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15.0),
+            border: Border.all(
+              color: AppColor.primaryColor,
+              width: 1.3,
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            color: AppColor.backgroundColor,
+          ),
+          child: Container(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height * 0.18,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                const Text("Outstanding Balance",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: AppColor.primaryColor)),
-                Text('Rs.${invoiceLogic.outstandingBalance.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: AppColor.primaryColor)),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                    "Discount (${totalBillAmount == 0 ? '0.0' : (discountAmount / totalBillAmount * 100).toStringAsFixed(2)}%)",
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: AppColor.primaryColor)),
-                Text("Rs.${discountAmount.toStringAsFixed(2)}",
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: AppColor.primaryColor)),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Always start with "Payable Total" as the initial label
-                const Text("Payable Total",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: AppColor.primaryColor)),
-                FutureBuilder<double>(
-                  future: invoiceLogic.getTotalPriceWithDiscount(),
-                  builder: (context, snapshot) {
-                    String
-                        rightSideText; // Variable to hold the dynamic right side text
-
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      rightSideText =
-                          "Calculating..."; // Show while data is loading
-                    } else if (snapshot.hasError) {
-                      // Logger()
-                      //     .e("Error fetching total price: ${snapshot.error}");
-                      rightSideText =
-                          "Error: ${snapshot.error}"; // Display errors distinctly
-                    } else {
-                      double totalDue =
-                          snapshot.data ?? 0.0; // Fetched total amount due
-                      // Logger().d("Fetched Total Due: $totalDue");
-
-                      // Determine the right side text based on the payment status
-                      if (invoiceLogic.isFullyPaid) {
-                        rightSideText =
-                            "Rs.${invoiceLogic.paidAmount.toStringAsFixed(2)}"; // Show paid amount if fully paid
-                        // Logger().d(
-                        //     "Invoice fully paid, displaying Paid Amount: ${invoiceLogic.paidAmount}");
-                      } else if (invoiceLogic.isPartiallyPaid) {
-                        rightSideText =
-                            "Rs.0.00"; // Display '0.0' for partially paid invoices
-                        //Logger().d("Invoice partially paid, displaying '0.0'");
-                      } else {
-                        rightSideText =
-                            "Rs.${totalDue.toStringAsFixed(2)}"; // Otherwise, show the total due
-                        // Logger().d(
-                        //     "Invoice not fully or partially paid, showing Total Due: $totalDue");
-                      }
-                    }
-
-                    return Text(rightSideText,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text("Total Bill",
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppColor.primaryColor)),
+                    Text("Rs.${totalBillAmount.toStringAsFixed(2)}",
                         style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: AppColor.primaryColor));
-                  },
-                )
+                            color: AppColor.primaryColor)),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "Outstanding Balance",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColor.primaryColor,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      height: 20,
+                      child: ToggleSwitch(
+                        minWidth: 36.0,
+                        cornerRadius: 20.0,
+                        activeBgColors: [
+                          [Colors.red[800]!],
+                          [AppColor.primaryColor]
+                        ],
+                        activeFgColor: Colors.white,
+                        inactiveBgColor: Colors.grey,
+                        inactiveFgColor: Colors.white,
+                        initialLabelIndex:
+                            invoiceLogic.isOutstandingBalancePaid ? 1 : 0,
+                        totalSwitches: 2,
+                        labels: ['Not', 'Paid'],
+                        customTextStyles: [
+                          TextStyle(fontSize: 7.0, fontWeight: FontWeight.bold),
+                          TextStyle(fontSize: 7.0, fontWeight: FontWeight.bold),
+                        ],
+                        radiusStyle: true,
+                        onToggle: (index) {
+                          Provider.of<InvoiceLogic>(context, listen: false)
+                              .calculateTotalPriceWithDiscount();
+                          //invoiceLogic.calculateTotalPriceWithDiscount();
+                          invoiceLogic.isOutstandingBalancePaid = index == 0;
+                        },
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      'Rs.${invoiceLogic.tempOutstandingBalance.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColor.primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                        "Discount (${totalBillAmount == 0 ? '0.0' : (discountAmount / totalBillAmount * 100).toStringAsFixed(2)}%)",
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppColor.primaryColor)),
+                    Text("Rs.${discountAmount.toStringAsFixed(2)}",
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppColor.primaryColor)),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text("Payable Total",
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppColor.primaryColor)),
+                    Text(
+                        'Rs.${invoiceLogic.tempTotalPriceWithDiscount.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppColor.primaryColor)),
+                  ],
+                ),
               ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
   Widget _buildAddPaymentSection() {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey), // Border color
-        borderRadius: BorderRadius.circular(6), // Border radius
+        border: Border.all(color: Colors.grey),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: ExpansionTileCard(
         expandedColor: AppColor.backgroundColor,
-        //expandedColor: Colors.grey[300],
         title: const Text('Add Payments'),
         children: <Widget>[
           const Divider(thickness: 1.0, height: 1.0),
@@ -619,7 +610,8 @@ class _InvoicePageState extends State<InvoicePage> {
                 InkWell(
                   onTap: () {
                     setState(() {
-                      showPaymentFields = !showPaymentFields;
+                      invoiceLogic.showPaymentFields =
+                          !invoiceLogic.showPaymentFields;
                     });
                   },
                   child: Row(
@@ -633,12 +625,28 @@ class _InvoicePageState extends State<InvoicePage> {
                       ),
                       const Spacer(),
                       CustomAddButton(
-                        onPressed: () async {},
+                        onPressed: invoiceLogic.isFullCreditApplied ||
+                                invoiceLogic.isFullPaidApplied
+                            ? () {} // Provide an empty function to disable the button
+                            : () {
+                                if (invoiceLogic
+                                        .selectedPaymentMethod?.paymentName ==
+                                    'Credit') {
+                                  invoiceLogic
+                                      .applyFullCredit(); // Apply full credit
+                                } else {
+                                  invoiceLogic
+                                      .applyFullPaid(); // Apply full payment
+                                }
+                                _handlePayment(context);
+                                setState(
+                                    () {}); // Your existing payment handling logic
+                              },
                         buttonText:
                             invoiceLogic.selectedPaymentMethod?.paymentName ==
                                     'Credit'
                                 ? 'Fully Credit'
-                                : 'Full Paid Now',
+                                : 'Fully Paid Now',
                         backgroundColor: AppColor.accentColor,
                         textColor: Colors.white,
                         strokeColor: AppColor.accentStrokeColor,
@@ -648,14 +656,13 @@ class _InvoicePageState extends State<InvoicePage> {
                   ),
                 ),
                 const SizedBox(height: 15),
-                if (showPaymentFields) ...[
+                if (invoiceLogic.showPaymentFields) ...[
                   if (invoiceLogic.selectedPaymentMethod?.paymentName ==
                       'Cheque')
                     ..._buildChequeDetailsInputs(),
                   if (invoiceLogic.selectedPaymentMethod?.paymentName ==
-                          'Cash' ||
-                      invoiceLogic.selectedPaymentMethod?.paymentName ==
-                          'Credit')
+                          'Credit' ||
+                      invoiceLogic.selectedPaymentMethod?.paymentName == 'Cash')
                     ..._buildOtherPaymentInputs(),
                 ],
               ],
@@ -666,26 +673,64 @@ class _InvoicePageState extends State<InvoicePage> {
     );
   }
 
+  Future<void> _handlePayment(BuildContext context) async {
+    if (invoiceLogic.selectedPaymentMethod?.paymentName == 'Cheque') {
+      await invoiceLogic.handleFullPayment(
+        context,
+        'Cheque',
+        bankController,
+        chequeNumberController,
+        amountController,
+        dateController,
+      );
+      setState(() {}); // Update state after handling full payment
+    } else if (invoiceLogic.selectedPaymentMethod?.paymentName == 'Cash') {
+      await invoiceLogic.handleFullPayment(
+        context,
+        'Cash',
+        bankController,
+        chequeNumberController,
+        amountController,
+        dateController,
+      );
+      setState(() {
+        invoiceLogic.outstandingBalance = 0.0;
+      });
+    } else if (invoiceLogic.selectedPaymentMethod?.paymentName == 'Credit') {
+      await invoiceLogic.handleFullPayment(
+        context,
+        'Credit',
+        bankController,
+        chequeNumberController,
+        amountController,
+        dateController,
+      );
+      setState(() {
+        invoiceLogic.outstandingBalance += invoiceLogic.totalPayableAmount;
+        invoiceLogic.totalPayableAmount = 0.0;
+      });
+    }
+  }
+
   List<Widget> _buildChequeDetailsInputs() {
     return [
-      _buildBankDropdown(200), //326
-      const SizedBox(height: 10), // Dropdown for bank selection
+      _buildBankDropdown(200),
+      const SizedBox(height: 10),
       _buildChequeNumberInput(),
-      const SizedBox(height: 10), // Input for cheque number
+      const SizedBox(height: 10),
       _buildAmountInput(),
-      const SizedBox(height: 10), // Input for amount
+      const SizedBox(height: 10),
       _buildDateInput(),
-      const SizedBox(height: 10), // Input for date
-      _buildActionButtons(), // "Cancel" and "Add" buttons
+      const SizedBox(height: 10),
+      _buildActionButtons(),
     ];
   }
 
   List<Widget> _buildOtherPaymentInputs() {
     return [
       _buildAmountInput(),
-      const SizedBox(height: 10), // Input for amount
-      _buildDateInput(),
-      const SizedBox(height: 10), // Input for date
+      const SizedBox(height: 10),
+      const SizedBox(height: 10),
       _buildActionButtons(),
     ];
   }
@@ -714,8 +759,8 @@ class _InvoicePageState extends State<InvoicePage> {
         });
       },
       dropdownMenuEntries: [
-        'Bank of Ceylon (BOC)', // Standardized naming convention
-        'Commercial Bank of Ceylon PLC', // This might typically refer to Commercial Bank of Ceylon PLC
+        'Bank of Ceylon (BOC)',
+        'Commercial Bank of Ceylon PLC',
         'DFCC Bank',
         'Hatton National Bank (HNB)',
         'National Development Bank PLC (NDB)',
@@ -723,13 +768,13 @@ class _InvoicePageState extends State<InvoicePage> {
         'People’s Bank',
         'Sampath Bank PLC',
         'Seylan Bank PLC',
-        'Union Bank of Colombo PLC' // Placeholder bank options
+        'Union Bank of Colombo PLC'
       ].map<DropdownMenuEntry<String>>(
         (String bank) {
           return DropdownMenuEntry<String>(
             value: bank,
             label: bank,
-            leadingIcon: Icon(Icons.account_balance), // Just a placeholder icon
+            leadingIcon: Icon(Icons.account_balance),
           );
         },
       ).toList(),
@@ -755,6 +800,16 @@ class _InvoicePageState extends State<InvoicePage> {
       controller: amountController,
       keyboardType: TextInputType.number,
       onSaved: (value) {},
+      validator: (value) {
+        // Synchronously validate the amount
+        double? amount = double.tryParse(value ?? '0.0');
+        if (amount == null || amount < 0) {
+          // Immediate feedback for clearly invalid input
+          return 'Please enter a valid amount';
+        }
+        // Since actual validation is asynchronous, it should be handled at submission
+        return null; // Assuming further validation will occur on form submission
+      },
     );
   }
 
@@ -769,7 +824,7 @@ class _InvoicePageState extends State<InvoicePage> {
         DateTime? pickedDate = await showDatePicker(
           context: context,
           initialDate: DateTime.now(),
-          firstDate: DateTime(2000),
+          firstDate: DateTime.now(),
           lastDate: DateTime(2100),
         );
         if (pickedDate != null) {
@@ -787,31 +842,124 @@ class _InvoicePageState extends State<InvoicePage> {
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         Expanded(
-          flex: 1, // Adjust flex to change the proportion
+          flex: 1,
           child: CustomAddButton(
             onPressed: () {
+              // Perform any necessary asynchronous operations first.
+
+              // Then, update the UI synchronously within a setState call.
               setState(() {
-                bankController.clear();
-                chequeNumberController.clear();
-                amountController.clear();
-                dateController.clear();
-                showPaymentFields = false;
+                invoiceLogic.resetTempBalanceToOriginal();
+                //invoiceLogic.applyOutstandingBalanceChanges();
+                invoiceLogic.resetTempTotalPriceToOriginal();
+                invoiceLogic.getOutstandingBalance(
+                    invoiceLogic.selectedClient!.clientId);
+                invoiceLogic.calculateTotalPriceWithDiscount();
+                invoiceLogic.cancelActions();
+                invoiceLogic.isFullyPaid = false;
+                invoiceLogic.isPartiallyPaid = false;
+                invoiceLogic.clearPaymentFields(
+                  bankController,
+                  chequeNumberController,
+                  amountController,
+                  dateController,
+                );
+                invoiceLogic.showPaymentFields = false;
+
+                FocusScope.of(context)
+                    .requestFocus(FocusNode()); // Hide keyboard
               });
             },
             buttonText: 'Cancel',
-            backgroundColor: AppColor.accentColor,
+            backgroundColor: Colors.red,
             textColor: Colors.white,
-            strokeColor: AppColor.accentStrokeColor,
+            strokeColor: Colors.redAccent,
             borderRadius: 10,
           ),
         ),
         const SizedBox(width: 10),
         Expanded(
-          flex: 1, // Adjust flex to change the proportion
+          flex: 1,
           child: CustomAddButton(
-            onPressed: () {
+            onPressed: () async {
+              // Validate form data
               if (_formKey.currentState!.validate()) {
-                print('Cheque details added');
+                double amount = double.tryParse(amountController.text) ?? 0.0;
+                bool isValidAmount = await invoiceLogic.validateAmount(amount);
+                Logger().w(
+                    "Validate Amount: $isValidAmount, Temp Payable Total: ${invoiceLogic.tempTotalPriceWithDiscount.toStringAsFixed(2)}");
+
+                // Check if the entered amount is valid
+                if (!isValidAmount) {
+                  AleartBox.showAleart(
+                    context,
+                    DialogType.warning,
+                    'Invalid Amount',
+                    'The amount entered cannot be greater than the payable total.',
+                  );
+                  return;
+                }
+
+                // Additional validation specific to the 'Cheque' payment method
+                // if (invoiceLogic.selectedPaymentMethod?.paymentName ==
+                //     'Cheque') {
+                //   // Check if the date is valid
+                //   DateTime? date = DateTime.tryParse(dateController.text);
+                //   if (date == null || !invoiceLogic.validateDate(date)) {
+                //     AleartBox.showAleart(
+                //       context,
+                //       DialogType.warning,
+                //       'Invalid Date',
+                //       'The date must be in the future.',
+                //     );
+                //     return;
+                //   }
+                //
+                //   // Check if a bank is selected
+                //   if (bankController.text.isEmpty) {
+                //     AleartBox.showAleart(
+                //       context,
+                //       DialogType.warning,
+                //       'Bank Required',
+                //       'Please select a bank.',
+                //     );
+                //     return;
+                //   }
+                //
+                //   // Validate the cheque number
+                //   if (chequeNumberController.text.isEmpty ||
+                //       chequeNumberController.text.length != 6) {
+                //     AleartBox.showAleart(
+                //       context,
+                //       DialogType.warning,
+                //       'Invalid Cheque Number',
+                //       'Please enter a valid 6-digit cheque number.',
+                //     );
+                //     return;
+                //   }
+                // }
+                if (amount == invoiceLogic.tempTotalPriceWithDiscount) {
+                  await invoiceLogic.markInvoiceAsFullyPaid(
+                      context,
+                      bankController,
+                      chequeNumberController,
+                      amountController,
+                      dateController);
+
+                  // After marking as fully paid, no need to process partial payment
+                  return;
+                }
+
+                // Proceed with partial payment handling if not a full payment
+                await invoiceLogic.handlePartialPayment(
+                    context, amountController);
+                invoiceLogic.clearPaymentFields(
+                  bankController,
+                  chequeNumberController,
+                  amountController,
+                  dateController,
+                );
+                invoiceLogic.showPaymentFields = false;
               }
             },
             buttonText: 'Add',
@@ -825,30 +973,56 @@ class _InvoicePageState extends State<InvoicePage> {
     );
   }
 
-  Widget _buildPrintInvoiceButton() {
-    return CustomButton(
-      buttonText: 'Print Invoice',
-      onTap: () async {
-        bool canPrint = invoiceLogic.canPrintInvoice();
-        if (canPrint) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => PrintInvoice(invoiceLogic: invoiceLogic)),
-          );
-        } else {
-          AleartBox.showAleart(
-            context,
-            DialogType.error,
-            'Incomplete Information',
-            invoiceLogic.invoiceErrorMessage,
-          );
-        }
-      },
-      buttonColor: invoiceLogic.canPrintInvoice()
-          ? AppColor.accentColor
-          : AppColor.disableBtnColor,
-      isLoading: false,
-    );
-  }
+  // Widget _buildPrintInvoiceButton() {
+  //   return CustomButton(
+  //     buttonText: 'Print Receipt',
+  //     onTap: () async {
+  //       // if (_connected) {
+  //       //   try {
+  //       //     setState(() {
+  //       //       isLoading = true;
+  //       //     });
+  //       //     await printInvoice._printReceipt();
+  //       //     setState(() {
+  //       //       isLoading = false;
+  //       //     });
+  //       //   } catch (e) {
+  //       //     Logger().e('Error printing receipt: $e');
+  //       //     setState(() {
+  //       //       isLoading = false;
+  //       //     });
+  //       //     if (mounted) {
+  //       //       AwesomeDialog(
+  //       //         context: context,
+  //       //         dialogType: DialogType.error,
+  //       //         headerAnimationLoop: false,
+  //       //         animType: AnimType.bottomSlide,
+  //       //         title: 'Print Error',
+  //       //         desc:
+  //       //         'An error occurred while printing the receipt. Please try again.',
+  //       //         buttonsTextStyle: const TextStyle(color: Colors.black),
+  //       //         btnOkOnPress: () {},
+  //       //       ).show();
+  //       //     }
+  //       //   }
+  //       // } else {
+  //       //   if (mounted) {
+  //       //     AwesomeDialog(
+  //       //       context: context,
+  //       //       dialogType: DialogType.error,
+  //       //       headerAnimationLoop: false,
+  //       //       animType: AnimType.bottomSlide,
+  //       //       title: 'Connection Error',
+  //       //       desc:
+  //       //       'No device connected. Please connect a device and try again.',
+  //       //       buttonsTextStyle: const TextStyle(color: Colors.black),
+  //       //       btnOkOnPress: () {},
+  //       //     ).show();
+  //       //   }
+  //       // }
+  //     },
+  //     buttonColor: AppColor.accentColor,
+  //     isLoading: isLoading,
+  //   );
+  // }
 }

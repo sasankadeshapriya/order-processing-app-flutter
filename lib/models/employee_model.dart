@@ -28,7 +28,7 @@ class EmployeeModel {
       profilePicture: employeeData['profile_picture'] as String?,
       commissionRate:
           double.parse(employeeData['commission_rate']?.toString() ?? '0'),
-      phoneNo: employeeData['phoneNo'] as String?, // Deserialize from JSON
+      phoneNo: employeeData['phone_no'] as String?, // Deserialize from JSON
       nic: employeeData['nic'] as String?, // Deserialize from JSON
     );
   }
