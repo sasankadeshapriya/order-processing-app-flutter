@@ -1,9 +1,10 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:order_processing_app/models/vehicle.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class VehicleApiService {
-  static const String baseUrl = 'https://api.gsutil.xyz';
+  static final String baseUrl = dotenv.env['BASE_URL']!;
   static Future<List<Vehicle>> getAllVehicles() async {
     final response = await http.get(Uri.parse('$baseUrl/vehicles'));
     if (response.statusCode == 200) {

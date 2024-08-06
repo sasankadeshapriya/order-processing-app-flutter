@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:order_processing_app/models/route.dart';
@@ -7,8 +8,8 @@ import 'package:order_processing_app/models/vehicle.dart';
 import 'package:order_processing_app/utils/logger.dart';
 
 class AssignmentApiService {
-  static const String baseUrl = 'https://api.gsutil.xyz';
-  static const String empbaseUrl = '$baseUrl/employee';
+  static final String baseUrl = dotenv.env['BASE_URL']!;
+  static final String empbaseUrl = '$baseUrl/employee';
 
   static Future<dynamic> fetchResource(String endpoint) async {
     final response = await http.get(Uri.parse('$baseUrl/$endpoint'));
