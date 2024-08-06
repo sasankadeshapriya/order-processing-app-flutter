@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 import 'package:order_processing_app/models/invoice_mod.dart';
@@ -10,7 +11,7 @@ import 'package:order_processing_app/utils/logger.dart';
 import '../models/clients_modle.dart';
 
 class InvoiceService {
-  static const String baseUrl = 'https://api.gsutil.xyz';
+  static final String baseUrl = dotenv.env['BASE_URL']!;
 
 // get all invoices
   static Future<List<Invoice>> getInvoices() async {
@@ -79,7 +80,7 @@ class InvoiceService {
   }
 
   Future<Map<String, dynamic>> postInvoiceData(InvoiceModle invoice) async {
-    const String apiUrl = '$baseUrl/invoice';
+    final String apiUrl = '$baseUrl/invoice';
     try {
       final String requestBody = jsonEncode(invoice.toJson());
       final response = await http.post(

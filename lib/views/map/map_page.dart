@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -260,8 +261,9 @@ class _MapPageState extends State<MapPage> {
     String waypointsStr = waypoints
         .map((point) => "${point.latitude},${point.longitude}")
         .join('|');
+    String apiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
     String url =
-        'https://maps.googleapis.com/maps/api/directions/json?origin=${start.latitude},${start.longitude}&destination=${destination.latitude},${destination.longitude}&waypoints=optimize:true|$waypointsStr&key=$GOOGLE_MAPS_API_KEY';
+        'https://maps.googleapis.com/maps/api/directions/json?origin=${start.latitude},${start.longitude}&destination=${destination.latitude},${destination.longitude}&waypoints=optimize:true|$waypointsStr&key=$apiKey';
     http.Response response = await http.get(Uri.parse(url));
     Map values = jsonDecode(response.body);
     List<LatLng> routeCoordinates = [];
