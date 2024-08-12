@@ -31,6 +31,7 @@ class InvoiceLogic extends ChangeNotifier {
   String invoiceErrorMessage = '';
   double? _outstandingBalance = 0.0;
   double _tempOutstandingBalance = 0.0;
+  double _newOutstandingBalance = 0.0;
   //double? totalPrice = 0.0;
   double _totalPriceWithDiscount = 0.0;
   double _tempTotalPriceWithDiscount = 0.0;
@@ -43,6 +44,7 @@ class InvoiceLogic extends ChangeNotifier {
   bool isFullCreditApplied = false;
   bool isFullPaidApplied = false;
   bool _isOutstandingBalancePaid = false;
+  double _allocationAmount = 0.0;
   final Map<int, TextEditingController> _quantityControllers = {};
 
   InvoiceLogic() {
@@ -59,7 +61,8 @@ class InvoiceLogic extends ChangeNotifier {
   set isOutstandingBalancePaid(bool value) {
     if (_isOutstandingBalancePaid != value) {
       _isOutstandingBalancePaid = value;
-      applyOutstandingBalanceChanges();
+      //applyOutstandingBalanceChanges();
+      resetTempBalanceToOriginal();
       notifyListeners();
       calculateTotalPriceWithDiscount(); // Recalculate whenever the balance status changes
       notifyListeners();
@@ -70,6 +73,26 @@ class InvoiceLogic extends ChangeNotifier {
   double get tempOutstandingBalance => _tempOutstandingBalance;
   double get totalPriceWithDiscount => _totalPriceWithDiscount;
   double get tempTotalPriceWithDiscount => _tempTotalPriceWithDiscount;
+  double get allocationAmount => _allocationAmount;
+  double get newOutstandingBalance => _newOutstandingBalance;
+
+  // Setter for new outstanding balance
+  set newOutstandingBalance(double value) {
+    _newOutstandingBalance = value;
+    notifyListeners();
+  }
+
+  // Reset the new outstanding balance to the original outstanding balance
+  void resetNewOutstandingBalance() {
+    _newOutstandingBalance = _outstandingBalance!;
+    notifyListeners();
+  }
+
+  // Clear the new outstanding balance to zero
+  void clearNewOutstandingBalance() {
+    _newOutstandingBalance = 0.0;
+    notifyListeners();
+  }
 
   set outstandingBalance(double value) {
     _outstandingBalance = value;
@@ -79,6 +102,11 @@ class InvoiceLogic extends ChangeNotifier {
   void updateTempOutstandingBalance(double value) {
     _tempOutstandingBalance = value;
     notifyListeners();
+  }
+
+  set allocationAmount(double newValue) {
+    _allocationAmount = newValue;
+    notifyListeners(); // Notify UI and other listeners about the change
   }
 
   void resetTempBalanceToOriginal() {
@@ -555,8 +583,8 @@ class InvoiceLogic extends ChangeNotifier {
       ) async {
     isFullyPaid = true;
     isPartiallyPaid = false;
-    paidAmount = getTotalBillAmount() - getDiscountAmount();
-    totalPayableAmount = paidAmount;
+    //paidAmount = getTotalBillAmount() - getDiscountAmount();
+    //totalPayableAmount = paidAmount;
     showPaymentFields = true;
 
     AwesomeDialog(
@@ -585,10 +613,10 @@ class InvoiceLogic extends ChangeNotifier {
   Future<bool> validateAmount(double amount) async {
     double totalPriceWithDiscount =
         double.parse(tempTotalPriceWithDiscount.toStringAsFixed(2));
-    Logger().w(
-        '${totalPriceWithDiscount.toStringAsFixed(2)}'); // Logging the price formatted to two decimals
-    Logger().f(
-        '${amount.toStringAsFixed(2)}'); // Logging the amount formatted to two decimals
+    // Logger().w(
+    //     '${totalPriceWithDiscount.toStringAsFixed(2)}'); // Logging the price formatted to two decimals
+    // Logger().f(
+    //     '${amount.toStringAsFixed(2)}'); // Logging the amount formatted to two decimals
     return amount <= totalPriceWithDiscount;
   }
 
@@ -596,6 +624,12 @@ class InvoiceLogic extends ChangeNotifier {
   bool validateDate(DateTime date) {
     return date.isAfter(DateTime.now());
   }
+
+  // Future<void> calAllocatAmount(bool Amount ,String paymentMethod){
+  //   Switch (paymentMethod){
+  //     case 'Cash'
+  //   }
+  // }
 
   // New method to handle logic based on payment method
   Future<void> handleFullPayment(
@@ -611,6 +645,8 @@ class InvoiceLogic extends ChangeNotifier {
           Logger().f("inside fullpaid cash switch");
 
           updateTempOutstandingBalance(0.0);
+          //newOutstandingBalance(outstandingBalance); // can be set original outstandingBalance value without this
+          allocationAmount = (outstandingBalance);
         } else {
           resetTempBalanceToOriginal();
         }
@@ -625,6 +661,7 @@ class InvoiceLogic extends ChangeNotifier {
           isFullyPaid = true;
           updateTempOutstandingBalance(tempTotalPriceWithDiscount);
           updateTempTotalPriceWithDiscount(0.0);
+          //
 
           Logger().f("isoutbalnce paid true $outstandingBalance, $paidAmount");
         } else {
@@ -688,9 +725,11 @@ class InvoiceLogic extends ChangeNotifier {
 
       case 'Credit':
         if (isOutstandingBalancePaid) {
+          // true
           if (enteredAmount == payableTotal) {
             isFullyPaid = true;
             isPartiallyPaid = false;
+
             updateTempOutstandingBalance(0.0);
           } else {
             isFullyPaid = false;
