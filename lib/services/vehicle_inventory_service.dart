@@ -1,12 +1,13 @@
 import 'dart:convert';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 
 import '../models/vehicle_inventory_modle.dart';
 
 class VehicleInventoryService {
-  final String baseUrl = 'https://api.gsutil.xyz';
+  static final String baseUrl = dotenv.env['BASE_URL']!;
 
   Future<bool> updateVehicleInventory(
       int assignmentId, VehicleInventory vehicleInventory) async {

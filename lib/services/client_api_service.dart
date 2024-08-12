@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 
@@ -7,7 +8,7 @@ import '../models/clients_modle.dart';
 // Import the logger package
 
 class ClientService {
-  static const String baseUrl = 'https://api.gsutil.xyz';
+  static final String baseUrl = dotenv.env['BASE_URL']!;
 
   // Fetch clients
   // static Future<List<dynamic>> fetchClients() async {
@@ -41,7 +42,7 @@ class ClientService {
   // }
 // Add New Client
   Future<Map<String, dynamic>> postClientData(Client client) async {
-    const String apiUrl = '$baseUrl/client';
+    final String apiUrl = '$baseUrl/client';
     try {
       final String requestBody = jsonEncode(client.toJson(forPost: true));
       final response = await http.post(

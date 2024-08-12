@@ -1,16 +1,17 @@
 // CommissionService.dart
 import 'dart:convert';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 import 'package:order_processing_app/models/commission_modle.dart';
 
 class CommissionService {
-  static const String baseUrl = 'http://api.gsutil.xyz';
+  static final String baseUrl = dotenv.env['BASE_URL']!;
 
   static Future<CommissionModel> addCommission(
       int empId, String date, double commissionAmount) async {
-    const url = '$baseUrl/commission/add';
+    final url = '$baseUrl/commission/add';
     final String requestBody = jsonEncode(<String, dynamic>{
       'emp_id': empId,
       'date': date,

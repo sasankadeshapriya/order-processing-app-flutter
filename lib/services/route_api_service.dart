@@ -1,9 +1,10 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:order_processing_app/models/route.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class RouteApiService {
-  static const String baseUrl = 'https://api.gsutil.xyz';
+  static final String baseUrl = dotenv.env['BASE_URL']!;
 
   static Future<List<Route>> getAllRoutes() async {
     final response = await http.get(Uri.parse('$baseUrl/routes'));

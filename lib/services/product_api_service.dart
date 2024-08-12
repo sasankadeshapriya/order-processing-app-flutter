@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 
@@ -7,7 +8,7 @@ import '../models/product_modle.dart';
 import '../models/product_response.dart'; // Ensure you have the correct import path
 
 class ProductService {
-  static const String baseUrl = 'https://api.gsutil.xyz';
+  static final String baseUrl = dotenv.env['BASE_URL']!;
 
   static Future<ProductResponse> fetchProducts(
       int empId, String currentDate) async {
