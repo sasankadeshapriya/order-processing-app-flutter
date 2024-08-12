@@ -11,6 +11,7 @@ import 'package:toggle_switch/toggle_switch.dart';
 
 import '../../components/alert_dialog.dart';
 import '../../components/custom_widget.dart';
+import '../../components/shimmer_effect.dart';
 import '../../models/clients_modle.dart';
 import '../../models/payments_modle.dart';
 import '../../models/product_modle.dart';
@@ -48,6 +49,7 @@ class _InvoicePageState extends State<InvoicePage> {
   bool isLoading = false;
   BluetoothDevice? _device;
   String tips = 'No device connected';
+  bool _isLoadingData = true;
 
   @override
   void initState() {
@@ -64,6 +66,12 @@ class _InvoicePageState extends State<InvoicePage> {
         empId, UtilFunctions.getCurrentDateTime(), context);
     Logger()
         .f('Products loaded into dropdown: ${invoiceLogic.productList.length}');
+    if (invoiceLogic.clients.isNotEmpty &&
+        invoiceLogic.productList.isNotEmpty) {
+      setState(() {
+        _isLoadingData = false;
+      });
+    }
   }
 
   @override
@@ -139,37 +147,69 @@ class _InvoicePageState extends State<InvoicePage> {
     );
   }
 
-  Widget _buildClientDropdown(double width, double height) {
-    return DropdownMenu<Client>(
-      controller: clientController,
-      width: width,
-      menuHeight: height,
-      hintText: "Select Client",
-      requestFocusOnTap: true,
-      enableFilter: true,
-      menuStyle: MenuStyle(
-        backgroundColor: MaterialStateProperty.all<Color>(
-          Colors.lightBlue.shade50,
+  AppBar _buildActualAppBar() {
+    return AppBar(
+      leading: Padding(
+        padding: const EdgeInsets.only(left: 16),
+        child: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_rounded,
+            color: AppColor.primaryTextColor,
+            size: 15,
+          ),
+          onPressed: () {
+            Navigator.pop(context);
+          },
         ),
       ),
-      label: const Text('Select Client'),
-      onSelected: (Client? client) async {
-        setState(() {
-          invoiceLogic.selectedClient = client;
-        });
-        await invoiceLogic
-            .getOutstandingBalance(invoiceLogic.selectedClient!.clientId);
-      },
-      dropdownMenuEntries: invoiceLogic.clients.map<DropdownMenuEntry<Client>>(
-        (Client client) {
-          return DropdownMenuEntry<Client>(
-            value: client,
-            label: client.organizationName ?? 'Unknown',
-            leadingIcon: Icon(client.icon),
-          );
-        },
-      ).toList(),
+      title: const Text(
+        'Add New Invoice',
+        style: TextStyle(
+          color: Color(0xFF464949),
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1,
+          fontFamily: 'SF Pro Text',
+        ),
+      ),
+      backgroundColor: AppColor.backgroundColor,
     );
+  }
+
+  Widget _buildClientDropdown(double width, double height) {
+    return _isLoadingData
+        ? CustomShimmerEffect(width: width, height: 60)
+        : DropdownMenu<Client>(
+            controller: clientController,
+            width: width,
+            menuHeight: height,
+            hintText: "Select Client",
+            requestFocusOnTap: true,
+            enableFilter: true,
+            menuStyle: MenuStyle(
+              backgroundColor: MaterialStateProperty.all<Color>(
+                Colors.lightBlue.shade50,
+              ),
+            ),
+            label: const Text('Select Client'),
+            onSelected: (Client? client) async {
+              setState(() {
+                invoiceLogic.selectedClient = client;
+              });
+              await invoiceLogic
+                  .getOutstandingBalance(invoiceLogic.selectedClient!.clientId);
+            },
+            dropdownMenuEntries:
+                invoiceLogic.clients.map<DropdownMenuEntry<Client>>(
+              (Client client) {
+                return DropdownMenuEntry<Client>(
+                  value: client,
+                  label: client.organizationName ?? 'Unknown',
+                  leadingIcon: Icon(client.icon),
+                );
+              },
+            ).toList(),
+          );
   }
 
   Widget _buildPaymentMethodDropdown(double width) {
@@ -182,37 +222,39 @@ class _InvoicePageState extends State<InvoicePage> {
       },
       child: AbsorbPointer(
         absorbing: invoiceLogic.selectedClient == null,
-        child: DropdownMenu<PaymentMethod>(
-          controller: paymentController,
-          width: width,
-          hintText: "Select Payment Method",
-          requestFocusOnTap: true,
-          enableFilter: true,
-          menuStyle: MenuStyle(
-            backgroundColor: MaterialStateProperty.all<Color>(
-              invoiceLogic.selectedClient != null
-                  ? Colors.lightBlue.shade50
-                  : Colors.grey.shade300,
-            ),
-          ),
-          label: const Text('Select Payment Method'),
-          onSelected: (PaymentMethod? paymentMethod) {
-            setState(() {
-              invoiceLogic.selectedPaymentMethod = paymentMethod;
-              invoiceLogic.calculateTotalPriceWithDiscount();
-            });
-          },
-          dropdownMenuEntries:
-              invoiceLogic.paymentMethods.map<DropdownMenuEntry<PaymentMethod>>(
-            (PaymentMethod paymentMethod) {
-              return DropdownMenuEntry<PaymentMethod>(
-                value: paymentMethod,
-                label: paymentMethod.paymentName,
-                leadingIcon: Icon(paymentMethod.paymentIcon),
-              );
-            },
-          ).toList(),
-        ),
+        child: _isLoadingData
+            ? CustomShimmerEffect(width: width, height: 60)
+            : DropdownMenu<PaymentMethod>(
+                controller: paymentController,
+                width: width,
+                hintText: "Select Payment Method",
+                requestFocusOnTap: true,
+                enableFilter: true,
+                menuStyle: MenuStyle(
+                  backgroundColor: MaterialStateProperty.all<Color>(
+                    invoiceLogic.selectedClient != null
+                        ? Colors.lightBlue.shade50
+                        : Colors.grey.shade300,
+                  ),
+                ),
+                label: const Text('Select Payment Method'),
+                onSelected: (PaymentMethod? paymentMethod) {
+                  setState(() {
+                    invoiceLogic.selectedPaymentMethod = paymentMethod;
+                    invoiceLogic.calculateTotalPriceWithDiscount();
+                  });
+                },
+                dropdownMenuEntries: invoiceLogic.paymentMethods
+                    .map<DropdownMenuEntry<PaymentMethod>>(
+                  (PaymentMethod paymentMethod) {
+                    return DropdownMenuEntry<PaymentMethod>(
+                      value: paymentMethod,
+                      label: paymentMethod.paymentName,
+                      leadingIcon: Icon(paymentMethod.paymentIcon),
+                    );
+                  },
+                ).toList(),
+              ),
       ),
     );
   }
@@ -229,38 +271,41 @@ class _InvoicePageState extends State<InvoicePage> {
       child: AbsorbPointer(
         absorbing: invoiceLogic.selectedClient == null ||
             invoiceLogic.selectedPaymentMethod == null,
-        child: DropdownMenu<Product>(
-          controller: productController,
-          width: width,
-          hintText: "Select product",
-          requestFocusOnTap: true,
-          enableFilter: true,
-          menuStyle: MenuStyle(
-            backgroundColor:
-                MaterialStateProperty.all<Color>(Colors.lightBlue.shade50),
-          ),
-          label: const Text('Select product'),
-          onSelected: (Product? product) {
-            setState(() {
-              invoiceLogic.selectedProduct = product;
-              if (product != null) {
-                invoiceLogic.addSelectedProduct(product);
-                invoiceLogic.calculateTotalPriceWithDiscount();
-              }
-            });
-          },
-          dropdownMenuEntries: invoiceLogic.productList.map((Product product) {
-            return DropdownMenuEntry<Product>(
-              value: product,
-              label: product.name,
-              leadingIcon: CircleAvatar(
-                backgroundImage:
-                    NetworkImage(product.productImage), // Ensure URL is correct
-                radius: 20,
+        child: _isLoadingData
+            ? CustomShimmerEffect(width: width, height: 60)
+            : DropdownMenu<Product>(
+                controller: productController,
+                width: width,
+                hintText: "Select product",
+                requestFocusOnTap: true,
+                enableFilter: true,
+                menuStyle: MenuStyle(
+                  backgroundColor: MaterialStateProperty.all<Color>(
+                      Colors.lightBlue.shade50),
+                ),
+                label: const Text('Select product'),
+                onSelected: (Product? product) {
+                  setState(() {
+                    invoiceLogic.selectedProduct = product;
+                    if (product != null) {
+                      invoiceLogic.addSelectedProduct(product);
+                      invoiceLogic.calculateTotalPriceWithDiscount();
+                    }
+                  });
+                },
+                dropdownMenuEntries:
+                    invoiceLogic.productList.map((Product product) {
+                  return DropdownMenuEntry<Product>(
+                    value: product,
+                    label: product.name,
+                    leadingIcon: CircleAvatar(
+                      backgroundImage: NetworkImage(
+                          product.productImage), // Ensure URL is correct
+                      radius: 20,
+                    ),
+                  );
+                }).toList(),
               ),
-            );
-          }).toList(),
-        ),
       ),
     );
   }
@@ -476,201 +521,239 @@ class _InvoicePageState extends State<InvoicePage> {
         double totalBillAmount = invoiceLogic.getTotalBillAmount();
         double discountAmount = invoiceLogic.getDiscountAmount();
 
-        return DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15.0),
-            border: Border.all(
-              color: AppColor.primaryColor,
-              width: 1.3,
-            ),
-            color: AppColor.backgroundColor,
-          ),
-          child: Container(
-            width: MediaQuery.of(context).size.width,
-            height: MediaQuery.of(context).size.height * 0.18,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("Total Bill",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: AppColor.primaryColor)),
-                    Text("Rs.${totalBillAmount.toStringAsFixed(2)}",
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: AppColor.primaryColor)),
-                  ],
+        return _isLoadingData
+            ? CustomShimmerEffect(
+                width: MediaQuery.of(context).size.width, height: 130)
+            : DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15.0),
+                  border: Border.all(
+                    color: AppColor.primaryColor,
+                    width: 1.3,
+                  ),
+                  color: AppColor.backgroundColor,
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      "Outstanding Balance",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: AppColor.primaryColor,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    SizedBox(
-                      height: 20,
-                      child: ToggleSwitch(
-                        minWidth: 36.0,
-                        cornerRadius: 20.0,
-                        activeBgColors: [
-                          [Colors.red[800]!],
-                          [AppColor.primaryColor]
+                child: Container(
+                  width: MediaQuery.of(context).size.width,
+                  height: MediaQuery.of(context).size.height * 0.18,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text("Total Bill",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColor.primaryColor)),
+                          Text("Rs.${totalBillAmount.toStringAsFixed(2)}",
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColor.primaryColor)),
                         ],
-                        activeFgColor: Colors.white,
-                        inactiveBgColor: Colors.grey,
-                        inactiveFgColor: Colors.white,
-                        initialLabelIndex:
-                            invoiceLogic.isOutstandingBalancePaid ? 1 : 0,
-                        totalSwitches: 2,
-                        labels: ['Not', 'Paid'],
-                        customTextStyles: [
-                          TextStyle(fontSize: 7.0, fontWeight: FontWeight.bold),
-                          TextStyle(fontSize: 7.0, fontWeight: FontWeight.bold),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "Outstanding Balance",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColor.primaryColor,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          SizedBox(
+                            height: 20,
+                            child: ToggleSwitch(
+                              minWidth: 36.0,
+                              cornerRadius: 20.0,
+                              activeBgColors: [
+                                [Colors.red[800]!],
+                                [AppColor.primaryColor]
+                              ],
+                              activeFgColor: Colors.white,
+                              inactiveBgColor: Colors.grey,
+                              inactiveFgColor: Colors.white,
+                              initialLabelIndex:
+                                  invoiceLogic.isOutstandingBalancePaid ? 1 : 0,
+                              totalSwitches: 2,
+                              labels: ['Not', 'Paid'],
+                              customTextStyles: [
+                                TextStyle(
+                                    fontSize: 7.0, fontWeight: FontWeight.bold),
+                                TextStyle(
+                                    fontSize: 7.0, fontWeight: FontWeight.bold),
+                              ],
+                              radiusStyle: true,
+                              onToggle: (index) {
+                                // Fetch the instance of InvoiceLogic
+                                var provider = Provider.of<InvoiceLogic>(
+                                    context,
+                                    listen: false);
+
+                                // Only change the status if the outstanding balance is not zero
+                                if (provider.outstandingBalance > 0 ||
+                                    index == 0) {
+                                  provider.isOutstandingBalancePaid =
+                                      index == 1;
+                                  provider.calculateTotalPriceWithDiscount();
+                                } else {
+                                  // If trying to set as 'Paid' but balance is zero, prevent it and possibly show an alert/dialog
+                                  showDialog(
+                                    context: context,
+                                    builder: (_) => AlertDialog(
+                                      title: Text("Action Not Allowed"),
+                                      content: Text(
+                                          "Cannot set as 'Paid' because there is no outstanding balance."),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.of(context)
+                                                .pop(); // Close the dialog
+                                          },
+                                          child: Text('OK'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            'Rs.${invoiceLogic.tempOutstandingBalance.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColor.primaryColor,
+                            ),
+                          ),
                         ],
-                        radiusStyle: true,
-                        onToggle: (index) {
-                          Provider.of<InvoiceLogic>(context, listen: false)
-                              .calculateTotalPriceWithDiscount();
-                          //invoiceLogic.calculateTotalPriceWithDiscount();
-                          invoiceLogic.isOutstandingBalancePaid = index == 0;
-                        },
                       ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      'Rs.${invoiceLogic.tempOutstandingBalance.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: AppColor.primaryColor,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                              "Discount (${totalBillAmount == 0 ? '0.0' : (discountAmount / totalBillAmount * 100).toStringAsFixed(2)}%)",
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColor.primaryColor)),
+                          Text("Rs.${discountAmount.toStringAsFixed(2)}",
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColor.primaryColor)),
+                        ],
                       ),
-                    ),
-                  ],
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text("Payable Total",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColor.primaryColor)),
+                          Text(
+                              'Rs.${invoiceLogic.tempTotalPriceWithDiscount.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColor.primaryColor)),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                        "Discount (${totalBillAmount == 0 ? '0.0' : (discountAmount / totalBillAmount * 100).toStringAsFixed(2)}%)",
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: AppColor.primaryColor)),
-                    Text("Rs.${discountAmount.toStringAsFixed(2)}",
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: AppColor.primaryColor)),
-                  ],
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("Payable Total",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: AppColor.primaryColor)),
-                    Text(
-                        'Rs.${invoiceLogic.tempTotalPriceWithDiscount.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: AppColor.primaryColor)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
+              );
       },
     );
   }
 
   Widget _buildAddPaymentSection() {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: ExpansionTileCard(
-        expandedColor: AppColor.backgroundColor,
-        title: const Text('Add Payments'),
-        children: <Widget>[
-          const Divider(thickness: 1.0, height: 1.0),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                InkWell(
-                  onTap: () {
-                    setState(() {
-                      invoiceLogic.showPaymentFields =
-                          !invoiceLogic.showPaymentFields;
-                    });
-                  },
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
+    return _isLoadingData
+        ? CustomShimmerEffect(
+            width: MediaQuery.of(context).size.width, height: 50)
+        : Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: ExpansionTileCard(
+              expandedColor: AppColor.backgroundColor,
+              title: const Text('Add Payments'),
+              children: <Widget>[
+                const Divider(thickness: 1.0, height: 1.0),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8.0, vertical: 8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.add),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Add Payment Details',
-                        style: const TextStyle(fontSize: 14),
+                      InkWell(
+                        onTap: () {
+                          setState(() {
+                            invoiceLogic.showPaymentFields =
+                                !invoiceLogic.showPaymentFields;
+                          });
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.add),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Add Payment Details',
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                            const Spacer(),
+                            CustomAddButton(
+                              onPressed: invoiceLogic.isFullCreditApplied ||
+                                      invoiceLogic.isFullPaidApplied
+                                  ? () {} // Provide an empty function to disable the button
+                                  : () {
+                                      if (invoiceLogic.selectedPaymentMethod
+                                              ?.paymentName ==
+                                          'Credit') {
+                                        invoiceLogic
+                                            .applyFullCredit(); // Apply full credit
+                                      } else {
+                                        invoiceLogic
+                                            .applyFullPaid(); // Apply full payment
+                                      }
+                                      _handlePayment(context);
+                                      setState(
+                                          () {}); // Your existing payment handling logic
+                                    },
+                              buttonText: invoiceLogic
+                                          .selectedPaymentMethod?.paymentName ==
+                                      'Credit'
+                                  ? 'Fully Credit'
+                                  : 'Fully Paid Now',
+                              backgroundColor: AppColor.accentColor,
+                              textColor: Colors.white,
+                              strokeColor: AppColor.accentStrokeColor,
+                              borderRadius: 10,
+                            ),
+                          ],
+                        ),
                       ),
-                      const Spacer(),
-                      CustomAddButton(
-                        onPressed: invoiceLogic.isFullCreditApplied ||
-                                invoiceLogic.isFullPaidApplied
-                            ? () {} // Provide an empty function to disable the button
-                            : () {
-                                if (invoiceLogic
-                                        .selectedPaymentMethod?.paymentName ==
-                                    'Credit') {
-                                  invoiceLogic
-                                      .applyFullCredit(); // Apply full credit
-                                } else {
-                                  invoiceLogic
-                                      .applyFullPaid(); // Apply full payment
-                                }
-                                _handlePayment(context);
-                                setState(
-                                    () {}); // Your existing payment handling logic
-                              },
-                        buttonText:
+                      const SizedBox(height: 15),
+                      if (invoiceLogic.showPaymentFields) ...[
+                        if (invoiceLogic.selectedPaymentMethod?.paymentName ==
+                            'Cheque')
+                          ..._buildChequeDetailsInputs(),
+                        if (invoiceLogic.selectedPaymentMethod?.paymentName ==
+                                'Credit' ||
                             invoiceLogic.selectedPaymentMethod?.paymentName ==
-                                    'Credit'
-                                ? 'Fully Credit'
-                                : 'Fully Paid Now',
-                        backgroundColor: AppColor.accentColor,
-                        textColor: Colors.white,
-                        strokeColor: AppColor.accentStrokeColor,
-                        borderRadius: 10,
-                      ),
+                                'Cash')
+                          ..._buildOtherPaymentInputs(),
+                      ],
                     ],
                   ),
                 ),
-                const SizedBox(height: 15),
-                if (invoiceLogic.showPaymentFields) ...[
-                  if (invoiceLogic.selectedPaymentMethod?.paymentName ==
-                      'Cheque')
-                    ..._buildChequeDetailsInputs(),
-                  if (invoiceLogic.selectedPaymentMethod?.paymentName ==
-                          'Credit' ||
-                      invoiceLogic.selectedPaymentMethod?.paymentName == 'Cash')
-                    ..._buildOtherPaymentInputs(),
-                ],
               ],
             ),
-          ),
-        ],
-      ),
-    );
+          );
   }
 
   Future<void> _handlePayment(BuildContext context) async {
@@ -845,9 +928,6 @@ class _InvoicePageState extends State<InvoicePage> {
           flex: 1,
           child: CustomAddButton(
             onPressed: () {
-              // Perform any necessary asynchronous operations first.
-
-              // Then, update the UI synchronously within a setState call.
               setState(() {
                 invoiceLogic.resetTempBalanceToOriginal();
                 //invoiceLogic.applyOutstandingBalanceChanges();
