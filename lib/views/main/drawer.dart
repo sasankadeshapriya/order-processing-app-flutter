@@ -60,14 +60,14 @@ class _AppDrawerState extends State<AppDrawer> {
                         : null,
                     child: widget.userProfilePic.isEmpty
                         ? Text(
-                      widget.userName.isNotEmpty
-                          ? widget.userName[0].toUpperCase()
-                          : "", // Get the first letter if the name is not empty
-                      style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black),
-                    )
+                            widget.userName.isNotEmpty
+                                ? widget.userName[0].toUpperCase()
+                                : "", // Get the first letter if the name is not empty
+                            style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black),
+                          )
                         : null, // No child text when the image is available
                   ),
                   Positioned(
@@ -88,7 +88,10 @@ class _AppDrawerState extends State<AppDrawer> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(50),
                           gradient: LinearGradient(
-                            colors: [Colors.white.withOpacity(1), Colors.white.withOpacity(0.5)],
+                            colors: [
+                              Colors.white.withOpacity(1),
+                              Colors.white.withOpacity(0.5)
+                            ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
@@ -101,7 +104,8 @@ class _AppDrawerState extends State<AppDrawer> {
                           ],
                         ),
                         child: Center(
-                          child: Icon(Icons.edit, color: AppColor.primaryColor, size: 20),
+                          child: Icon(Icons.edit,
+                              color: AppColor.primaryColor, size: 20),
                         ),
                       ),
                     ),
@@ -244,6 +248,19 @@ class _AppDrawerState extends State<AppDrawer> {
                   () async {
                 await _handleLogout(context);
               }),
+            ),
+            const SizedBox(height: 80), // Space before copyright text
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
+              child: Text(
+                'Copywright © ${DateTime.now().year} | InVoicer.',
+                style: GoogleFonts.poppins(
+                  color: Colors.white70,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
           ],
         ),
