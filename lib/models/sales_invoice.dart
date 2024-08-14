@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart'; // This import is for using @required annotation
+import 'package:flutter/foundation.dart';
 
 class SalesInvoice {
   final String referenceNumber;
@@ -52,6 +52,10 @@ class SalesInvoice {
           json['createdAt'] as String? ?? DateTime.now().toIso8601String()),
       invoiceDetails: details,
     );
+  }
+  @override
+  String toString() {
+    return 'SalesInvoice(referenceNumber: $referenceNumber, clientId: $clientId, employeeId: $employeeId, totalAmount: $totalAmount, paidAmount: $paidAmount, balance: $balance, discount: $discount, creditPeriodEndDate: $creditPeriodEndDate, paymentOption: $paymentOption, createdAt: $createdAt, invoiceDetails: $invoiceDetails)';
   }
 }
 
